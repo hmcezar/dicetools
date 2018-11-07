@@ -1,6 +1,5 @@
 """
-Script used to convert a GROMACS topology file and geometry to a DICE .dfr file.
-Set the OPLS_PATH variable to the path containing all the OPLS-AA force field files from GROMACS.
+Script used to convert a GROMACS topology file and geometry to the DICE .dfr and .txt files.
 
 Author: Henrique Musseli Cezar
 Date: JAN/2016
@@ -14,7 +13,6 @@ import shutil
 import openbabel
 import pybel
 from collections import OrderedDict
-sys.path.append(os.path.join(os.path.split(os.path.split(os.path.realpath(__file__))[0])[0],"split-fragments-script"))
 from fragGen import generate_fragfile
 
 def nm2a(num):
