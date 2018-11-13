@@ -21,6 +21,7 @@ If you want to use the graphical interface of DiceWin to perform some analysis, 
 - [SciPy](https://www.scipy.org/) 
 - [SIP](https://pypi.org/project/SIP/)
 - [PyQt5](https://riverbankcomputing.com/software/pyqt/intro)
+
 that can also be easily installed with conda with
 ```
 conda install scipy
@@ -32,6 +33,8 @@ conda install pyqt=5
 ## Short description of tools
 All the scripts can be run with the `-h` option to show a brief description of what the script does and the mandatory and optional parameters.
 
+### ang_distr_from_torsionals.py
+Receives the file name of a file containing data of a angle (or torsional angle) as one number per line, and an integer (number of bins) to give a file "pdf.dat" and a plot of the probability density function interpolated from the histogram.
 
 ## Authorship
 Most of the scripts here were written by Henrique Musseli Cezar, with the exception of DiceWin which was written by Thiago de Souza Duarte.
