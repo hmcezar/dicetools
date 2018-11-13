@@ -6,6 +6,7 @@ Date: FEB/2017
 """
 
 import argparse
+import os
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -36,6 +37,5 @@ if __name__ == '__main__':
   plt.xlim([0,step[-1]])
   plt.ylim([-180,180])
   plt.yticks([-180,-120,-60,0,60,120,180])
-
-  plt.savefig("dihedral_evolution.pdf", bbox_inches='tight')
+  plt.savefig(os.path.splitext(args.fangles)[0]+".pdf", bbox_inches='tight')
   plt.show()
