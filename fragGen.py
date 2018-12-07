@@ -30,7 +30,6 @@ def split_mol_fragments_daylight(imol):
 	# dictionary with the true atom of each dummy (dummies are the keys)
 	dummyAtomCorrespondence = {}
 
-
 	# for each rotatable bond, add dummy atoms in the ends bind them 
 	# to the respective atoms and them break the rotatable bond
 	for atom1, atom2 in rbonds:
@@ -79,7 +78,8 @@ def split_mol_fragments_daylight(imol):
 	# return disconnected fragments and the connections list (index of connected fragments) and the dummy to atom correspondence (by index)
 	return fragments, fragmentConnections, dummyAtomCorrespondence
 
-def generate_fragfile(filename, outtype):
+
+def generate_fragfile(filename, outtype, ffparams):
 	# check outtype
 	if outtype not in ["flex", "header", "min"]:
 		sys.exit('Invalid argument indicating verbosity of .dfr (%s). Use "flex", "header" or "min".' % outtype)
@@ -94,6 +94,35 @@ def generate_fragfile(filename, outtype):
 	# read molecule to OBMol object
 	mol = openbabel.OBMol()
 	obConversion.ReadFile(mol, filename)
+
+	if ffparams:
+		# get atomic labels from pdb
+		idToAtomicLabel = {}
+		for res in openbabel.OBResidueIter(mol):
+			for atom in openbabel.OBResidueAtomIter(res):
+				idToAtomicLabel[atom.GetId()] = res.GetAtomID(atom).strip()
+
+	  # read force field parameters and store info
+	  labelToSLabel = {}
+	  charges = {}
+	  epsilons = {}
+	  sigmas = {}
+	  with open(ffparams, 'r') as f:
+	  	line = f.readline()
+	  	while "$bond" not in line:
+	  		if line.strip().startswith("#") or not line.strip():
+	  			line = f.readline()
+	  			continue
+
+	  		lbl = line.split()[0]
+	  		charges[lbl] = line.split()[1]
+	  		epsilons[lbl] = line.split()[2]
+	  		sigmas[lbl] = line.split()[3]
+	  		labelToSLabel[lbl] = line.split()[4]
+
+	  		line = f.readline()
+
+
 
 	# split the molecule
 	fragments, fragConnection, dummyToAtom = split_mol_fragments_daylight(mol)
@@ -226,6 +255,7 @@ def generate_fragfile(filename, outtype):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Receives a molecular structure in an OpenBabel supported file format and creates both the '.dfr' (Dice FRagment) and the '.txt' DICE input files.")
 	parser.add_argument("filename", help="file containing the molecular structure")
+	parser.add_argument("-p","--force-field-parameters", help="file containing the force field parameters with labels from pdb")
 
 	io_group = parser.add_mutually_exclusive_group()
 	io_group.add_argument("--rigid-frags", help="consider the fragments rigid and defines only the fragment connections as flexible (default option)", action="store_true")
@@ -247,7 +277,11 @@ if __name__ == '__main__':
 	else:
 		opt = "min"
 
-	if ext[1:] not in obabel_sup:
+	if ext[1:].lower() not in obabel_sup:
 		sys.exit("The extension of the provided file is not supported by OpenBabel.")
 
-	generate_fragfile(filename, opt)
+	if (ext[1:].lower() != "pdb") and args.force_field_parameters:
+		sys.exit("When the force field parameters are given with '-p' you should have your structure in .pdb with the correct labels.")
+
+
+	generate_fragfile(filename, opt, args.force_field_parameters)
