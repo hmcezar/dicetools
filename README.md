@@ -68,17 +68,31 @@ After running fragGen, the user still needs to specify the force field parameter
 Given a .xyz file and an integer representing the number of atoms, print the first "natoms" atoms for the molecule as a .xyz. Usually used to extract the solute configurations from the simulation boxes, with "natoms" being the number of atoms of the solute.
 
 ### gromacs2dice.py
-Receives a GROMACS topology file (.top or .itp) and a file containing the geometry of the molecule (with the atoms in the same order) in .gro or any format supported by OpenBabel.
-
+Receives a GROMACS topology file (.top or .itp) built using either OPLS-AA or an AMBER variation, and a file containing the geometry of the molecule (with the atoms in the same order) in .gro or any format supported by OpenBabel.
+The script automatically converts the input to the DICE format (.txt and .dfr) also generating the maximum fragmentation of the molecule.
+This script is particularly useful because one can use one of the several possible topology generator tools, like [MKTOP](http://www.aribeiro.net.br/mktop/), [Antechamber](http://ambermd.org/antechamber/ac.html) or [LigParGen](http://zarbi.chem.yale.edu/ligpargen/) and then convert the topology to the DICE format.
+Beware though that you **MUST** check your topology when using these tools, specially your dihedrals.
+Depending on the type of molecule, it is not unusual for these tools to get some dihedral energies VERY wrong, and it is your job to identify and correct them.
+To check the dihedrals, you can use, e.g., the plot_eff_tors.py script.
 
 ### plot_eff_tors.py
+The plot_eff_tors is a script to find the rotational barrier between two fragments of a molecule.
+What is does is to divide the molecule in two parts around the chosen rotatable bond, keeping the parts as rigid bodies but rotating one of the sides around the rotatable bond.
+During this rotation, the energies are evaluated based on the given .dfr parameters and configurations at each step of the rotation can be stored.
+If the used wants, the script can also generate a Gaussian input based on a given .txt file containing the method, basis set and charge and multiplicity (as one usually have in the beginning of each Gaussian input).
+This input contains all the conformations of the rotation linked, and can be used to perform single point calculations and get the energy profile of the rotation.
+By comparing both the molecular mechanics and quantum energy profiles, the user may adjust the force field parameters to then perform the simulation.
 
 ### plot_en_angle_gaussian_scan.py
+This script receives a .log of the Gaussian calculation performed with the input of plot_eff_tors and then extracts the curve of dihedral angle vs energy.
 
 ### probability_interval.py
+Given a file containing a value per line, this script gives the probability of getting one value in a given interval.
+This is specially useful for computing, e.g., the number of *cis* configurations of a trajectory based on a list of dihedral angles.
 
 ### separate_configs_box.py
-
+Given a trajectory in .xyz, this script select a few configurations separated by an interval of steps and outputs them to STDOUT.
+This is useful if you saved configurations too often during the simulation and want to filter just a few of them.
 
 ## Authorship
 Most of the scripts here were written by Henrique Musseli Cezar, with the exception of DiceWin which was written by Thiago de Souza Duarte.
