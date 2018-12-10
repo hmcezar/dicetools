@@ -11,6 +11,7 @@ import pybel
 import os
 import argparse
 import sys
+import itertools
 
 def split_mol_fragments_daylight(imol):
   # create an OBMol object identical to the original to modificate
@@ -255,30 +256,56 @@ def generate_fragfile(filename, outtype, ffparams):
     if outtype != "header":
       f.write("\n$bond\n")
       bondIterator = openbabel.OBMolBondIter(mol)
-      for bond in bondIterator:
-        f.write(str(bond.GetBeginAtom().GetId()+1)+" "+str(bond.GetEndAtom().GetId()+1)+"  \t0.0\t"+str("%.6f" % bond.GetLength())+"\n")
+      if ffparams:
+        for bond in bondIterator:
+          try:
+            f.write(str(bond.GetBeginAtom().GetId()+1)+" "+str(bond.GetEndAtom().GetId()+1)+"  \t"+bonds[labelToSLabel[idToAtomicLabel[bond.GetBeginAtom().GetId()]]+"-"+labelToSLabel[idToAtomicLabel[bond.GetEndAtom().GetId()]]]+"\n")
+          except KeyError as e:
+            print("The parameters for atoms %d %d (%s) was not found in the bonds list\n" % (bond.GetBeginAtom().GetId()+1,bond.GetEndAtom().GetId()+1,e))
+            raise                        
+      else:
+        for bond in bondIterator:
+          f.write(str(bond.GetBeginAtom().GetId()+1)+" "+str(bond.GetEndAtom().GetId()+1)+"  \t0.0\t"+str("%.6f" % bond.GetLength())+"\n")
       f.write("$end bond\n")
 
     # angles are only printed for outtype flex
     if outtype == "flex":
       f.write("\n$angle\n")
       angleIterator = openbabel.OBMolAngleIter(mol)
-      for angle in angleIterator:
-        # carefully select the atoms to find the angle
-        atom2 = mol.GetAtomById(angle[0])
-        atom1 = mol.GetAtomById(angle[1])
-        atom3 = mol.GetAtomById(angle[2])
-        f.write(str(angle[1]+1)+" "+str(angle[0]+1)+" "+str(angle[2]+1)+"   \tharmonic\tK\t"+str("%.6f" % mol.GetAngle(atom1,atom2,atom3))+"\n")
+      if ffparams:
+        for angle in angleIterator:
+          try:
+            f.write(str(angle[1]+1)+" "+str(angle[0]+1)+" "+str(angle[2]+1)+"   \t"+angles[labelToSLabel[idToAtomicLabel[angle[1]]]+"-"+labelToSLabel[idToAtomicLabel[angle[0]]]+"-"+labelToSLabel[idToAtomicLabel[angle[2]]]]+"\n")
+          except KeyError as e:
+            print("The parameters for atoms %d %d %d (%s) was not found in the angles list\n" % (angle[1]+1,angle[0]+1,angle[2]+1,e))
+            raise            
+      else:
+        for angle in angleIterator:
+          # carefully select the atoms to find the angle
+          atom2 = mol.GetAtomById(angle[0])
+          atom1 = mol.GetAtomById(angle[1])
+          atom3 = mol.GetAtomById(angle[2])
+          f.write(str(angle[1]+1)+" "+str(angle[0]+1)+" "+str(angle[2]+1)+"   \tharmonic\tK\t"+str("%.6f" % mol.GetAngle(atom1,atom2,atom3))+"\n")
       f.write("$end angle\n")
 
     # all the dihedrals are printed to outtype flex, but only connection between fragments are printed if outtype is min
     if outtype == "flex":
       f.write("\n$dihedral\n")
       torsionIterator = openbabel.OBMolTorsionIter(mol)
-      for torsional in torsionIterator:
-        # Need to sum 1: http://forums.openbabel.org/Rotable-bonds-tp957795p957798.html
-        torsional = [str(x+1) for x in torsional]
-        f.write(torsional[0]+" "+torsional[1]+" "+torsional[2]+" "+torsional[3]+"   \tTYPE\tV1\tV2\tV3\tf1\tf2\tf3\n")
+      if ffparams:
+        for torsional in torsionIterator:
+          # Need to sum 1: http://forums.openbabel.org/Rotable-bonds-tp957795p957798.html
+          torsidx = [str(x+1) for x in torsional]
+          try:
+            f.write(torsidx[0]+" "+torsidx[1]+" "+torsidx[2]+" "+torsidx[3]+"   \t"+dihedrals["-".join([labelToSLabel[idToAtomicLabel[x]] for x in torsional])]+"\n")
+          except KeyError as e:
+            print("The parameters for atoms %s %s %s %s (%s) was not found in the dihedrals list\n" % (torsidx[0],torsidx[1],torsidx[2],torsidx[3],e))
+            raise
+      else:
+        for torsional in torsionIterator:
+          # Need to sum 1: http://forums.openbabel.org/Rotable-bonds-tp957795p957798.html
+          torsional = [str(x+1) for x in torsional]
+          f.write(torsional[0]+" "+torsional[1]+" "+torsional[2]+" "+torsional[3]+"   \tTYPE\tV1\tV2\tV3\tf1\tf2\tf3\n")
       f.write("$end dihedral\n")
 
       # improper dihedral = carbon with only 3 atoms connected to it (SP2 hybridization)
@@ -286,8 +313,9 @@ def generate_fragfile(filename, outtype, ffparams):
       f.write("\n$improper dihedral\n")
       atomIterator = openbabel.OBMolAtomIter(mol)
       for atom in atomIterator:
-        # print atom.GetHyb(), atom.GetAtomicNum(), atom.GetValence()
-        if atom.GetAtomicNum() == 6 and atom.GetValence() == 3:
+        # print(atom.GetHyb(), atom.GetAtomicNum(), atom.GetValence())
+        # if atom.GetAtomicNum() == 6 and atom.GetValence() == 3:
+        if atom.GetHyb() == 2:
           bondIterator = atom.BeginBonds()
           nbrAtom = atom.BeginNbrAtom(bondIterator)
           connectedAtoms = []
@@ -295,9 +323,25 @@ def generate_fragfile(filename, outtype, ffparams):
           for i in range(2):
             nbrAtom = atom.NextNbrAtom(bondIterator)
             connectedAtoms.append(nbrAtom)
-          torsional = [atom.GetId()+1, connectedAtoms[0].GetId()+1, connectedAtoms[1].GetId()+1, connectedAtoms[2].GetId()+1]
-          torsionAngle = mol.GetTorsion(torsional[0],torsional[1],torsional[2],torsional[3])
-          f.write(str(torsional[0])+" "+str(torsional[1])+" "+str(torsional[2])+" "+str(torsional[3])+"    \tV2\t"+str("%.6f" % torsionAngle)+"\n")
+          if ffparams:
+            torsional = [atom.GetId(), connectedAtoms[0].GetId(), connectedAtoms[1].GetId(), connectedAtoms[2].GetId()]
+            # create all the permutations to check if one is found
+            perms = list(itertools.permutations(torsional[1:]))
+            nfound = 0
+            for perm in perms:
+              try:
+                joined = "-".join([labelToSLabel[idToAtomicLabel[torsional[0]]]]+[labelToSLabel[idToAtomicLabel[x]] for x in perm])
+                f.write(str(torsional[0]+1)+" "+str(torsional[1]+1)+" "+str(torsional[2]+1)+" "+str(torsional[3]+1)+"    \t"+impropers[joined]+"\n")
+              except:
+                nfound += 1
+
+            if nfound == len(perms):
+              joined = "-".join([labelToSLabel[idToAtomicLabel[torsional[0]]]]+[labelToSLabel[idToAtomicLabel[x]] for x in perms[0]])
+              raise KeyError("The key %s (or its permutations) were not found in the improper dihedrals list\n" % (joined))
+          else:
+            torsional = [atom.GetId()+1, connectedAtoms[0].GetId()+1, connectedAtoms[1].GetId()+1, connectedAtoms[2].GetId()+1]
+            torsionAngle = mol.GetTorsion(torsional[0],torsional[1],torsional[2],torsional[3])
+            f.write(str(torsional[0])+" "+str(torsional[1])+" "+str(torsional[2])+" "+str(torsional[3])+"    \tV2\t"+str("%.6f" % torsionAngle)+"\n")
       f.write("$end improper dihedral\n")
     
     elif outtype == "min":
@@ -316,8 +360,17 @@ def generate_fragfile(filename, outtype, ffparams):
           tjf.append(tors)
 
       f.write("\n$dihedral\n")
-      for torsional in tjf:
-        f.write(torsional[0]+" "+torsional[1]+" "+torsional[2]+" "+torsional[3]+"   \tTYPE\tV1\tV2\tV3\tf1\tf2\tf3\n")
+      if ffparams:
+        for torsidx in tjf:
+          torsional = [int(x)-1 for x in torsidx]
+          try:
+            f.write(torsidx[0]+" "+torsidx[1]+" "+torsidx[2]+" "+torsidx[3]+"   \t"+dihedrals["-".join([labelToSLabel[idToAtomicLabel[x]] for x in torsional])]+"\n")
+          except KeyError as e:
+            print("The parameters for atoms %s %s %s %s (%s) was not found in the dihedrals list\n" % (torsidx[0],torsidx[1],torsidx[2],torsidx[3],e))
+            raise
+      else:
+        for torsional in tjf:
+          f.write(torsional[0]+" "+torsional[1]+" "+torsional[2]+" "+torsional[3]+"   \tTYPE\tV1\tV2\tV3\tf1\tf2\tf3\n")
       f.write("$end dihedral\n")
 
   # create directory to store the fragments
