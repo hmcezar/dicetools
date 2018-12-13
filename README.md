@@ -64,6 +64,9 @@ The fragGen is an script used to generate the input for CBMC simulations with DI
 fragGen always generates the maximum fragmentation of the molecule, breaking the molecule into the rotatable bonds.
 After running fragGen, the user still needs to specify the force field parameters in the .dfr and .txt
 
+### get_conf_traj.py
+Given a DICE .xyz trajectory and a configuration number (integer), extracts the configuration labeled with this configuration number from the trajectory and print to STDOUT. Useful, for example, to extract the whole configuration (considering the solvent) of a medoid of a cluster found with [Clustering Trajectory](https://github.com/hmcezar/clustering-traj).
+
 ### get_solute_xyz.py
 Given a .xyz file and an integer representing the number of atoms, print the first "natoms" atoms for the molecule as a .xyz. Usually used to extract the solute configurations from the simulation boxes, with "natoms" being the number of atoms of the solute.
 
