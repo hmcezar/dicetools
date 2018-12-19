@@ -80,7 +80,7 @@ def split_mol_fragments_daylight(imol):
   return fragments, fragmentConnections, dummyAtomCorrespondence
 
 
-def generate_fragfile(filename, outtype, ffparams):
+def generate_fragfile(filename, outtype, ffparams=None, eqgeom=False):
   # check outtype
   if outtype not in ["flex", "header", "min"]:
     sys.exit('Invalid argument indicating verbosity of .dfr (%s). Use "flex", "header" or "min".' % outtype)
@@ -235,16 +235,16 @@ def generate_fragfile(filename, outtype, ffparams):
     f.write("$atoms fragments\n")
     fragslst = []
     for frag in fragments:
-      f.write(frag.GetTitle()+"\t")
+      f.write(frag.GetTitle()+"\t[ ")
       fragAtomIterator = openbabel.OBMolAtomIter(frag)
       atomlst = [str(dummyToAtom[x.GetId()]+1) if x.GetId() in dummyAtoms else str(x.GetId()+1) for x in fragAtomIterator]
       fragslst.append(atomlst)
       for atom in atomlst:
         f.write(atom+"\t")                    
       if outtype == "min":
-        f.write("R\n")
+        f.write("] R\n")
       else:
-        f.write("F\n")
+        f.write("] F\n")
     f.write("$end atoms fragments\n") 
 
     f.write("\n$fragment connection\n")
@@ -259,7 +259,10 @@ def generate_fragfile(filename, outtype, ffparams):
       if ffparams:
         for bond in bondIterator:
           try:
-            f.write(str(bond.GetBeginAtom().GetId()+1)+" "+str(bond.GetEndAtom().GetId()+1)+"  \t"+bonds[labelToSLabel[idToAtomicLabel[bond.GetBeginAtom().GetId()]]+"-"+labelToSLabel[idToAtomicLabel[bond.GetEndAtom().GetId()]]]+"\n")
+            if eqgeom:
+              f.write(str(bond.GetBeginAtom().GetId()+1)+" "+str(bond.GetEndAtom().GetId()+1)+"  \t"+bonds[labelToSLabel[idToAtomicLabel[bond.GetBeginAtom().GetId()]]+"-"+labelToSLabel[idToAtomicLabel[bond.GetEndAtom().GetId()]]].split()[0]+"\t"+str("%.6f" % bond.GetLength())+"\n")
+            else:
+              f.write(str(bond.GetBeginAtom().GetId()+1)+" "+str(bond.GetEndAtom().GetId()+1)+"  \t"+bonds[labelToSLabel[idToAtomicLabel[bond.GetBeginAtom().GetId()]]+"-"+labelToSLabel[idToAtomicLabel[bond.GetEndAtom().GetId()]]]+"\n")
           except KeyError as e:
             print("The parameters for atoms %d %d (%s) was not found in the bonds list\n" % (bond.GetBeginAtom().GetId()+1,bond.GetEndAtom().GetId()+1,e))
             raise                        
@@ -275,7 +278,14 @@ def generate_fragfile(filename, outtype, ffparams):
       if ffparams:
         for angle in angleIterator:
           try:
-            f.write(str(angle[1]+1)+" "+str(angle[0]+1)+" "+str(angle[2]+1)+"   \t"+angles[labelToSLabel[idToAtomicLabel[angle[1]]]+"-"+labelToSLabel[idToAtomicLabel[angle[0]]]+"-"+labelToSLabel[idToAtomicLabel[angle[2]]]]+"\n")
+            if eqgeom:
+              atom2 = mol.GetAtomById(angle[0])
+              atom1 = mol.GetAtomById(angle[1])
+              atom3 = mol.GetAtomById(angle[2])
+              aparams = angles[labelToSLabel[idToAtomicLabel[angle[1]]]+"-"+labelToSLabel[idToAtomicLabel[angle[0]]]+"-"+labelToSLabel[idToAtomicLabel[angle[2]]]].split()
+              f.write(str(angle[1]+1)+" "+str(angle[0]+1)+" "+str(angle[2]+1)+"   \t"+aparams[0]+"\t"+aparams[1]+"\t"+str("%.6f" % mol.GetAngle(atom1,atom2,atom3))+"\n")
+            else:
+              f.write(str(angle[1]+1)+" "+str(angle[0]+1)+" "+str(angle[2]+1)+"   \t"+angles[labelToSLabel[idToAtomicLabel[angle[1]]]+"-"+labelToSLabel[idToAtomicLabel[angle[0]]]+"-"+labelToSLabel[idToAtomicLabel[angle[2]]]]+"\n")
           except KeyError as e:
             print("The parameters for atoms %d %d %d (%s) was not found in the angles list\n" % (angle[1]+1,angle[0]+1,angle[2]+1,e))
             raise            
@@ -385,6 +395,7 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Receives a molecular structure in an OpenBabel supported file format and creates both the '.dfr' (Dice FRagment) and the '.txt' DICE input files.")
   parser.add_argument("filename", help="file containing the molecular structure")
   parser.add_argument("-p","--force-field-parameters", help="file containing the force field parameters with labels from pdb")
+  parser.add_argument("-e","--equilibrium-from-geom", help="when the -p option is used, use the equilibrium values from the geometry and not from the file", action="store_true")
 
   io_group = parser.add_mutually_exclusive_group()
   io_group.add_argument("--rigid-frags", help="consider the fragments rigid and defines only the fragment connections as flexible (default option)", action="store_true")
@@ -392,6 +403,9 @@ if __name__ == '__main__':
   io_group.add_argument("--header", help="print just the header concerning the fragments and fragment connections", action="store_true")  
 
   args = parser.parse_args()
+
+  if args.equilibrium_from_geom and not args.force_field_parameters:
+    sys.exit("The -e option should only be used with -p.")
 
   obabel_sup = ["acr", "adf", "adfout", "alc", "arc", "bgf", "box", "bs", "c3d1", "c3d2", "cac", "caccrt", "cache", "cacint", "can", "car", "ccc", "cdx", "cdxml", "cht", "cif", "ck", "cml", "cmlr", "com", "copy", "crk2d", "crk3d", "csr", "cssr", "ct", "cub", "cube", "dmol", "dx", "ent", "fa", "fasta", "fch", "fchk", "fck", "feat", "fh", "fix", "fpt", "fract", "fs", "fsa", "g03", "g92", "g94", "g98", "gal", "gam", "gamin", "gamout", "gau", "gjc", "gjf", "gpr", "gr96", "gukin", "gukout", "gzmat", "hin", "inchi", "inp", "ins", "jin", "jout", "mcdl", "mcif", "mdl", "ml2", "mmcif", "mmd", "mmod", "mol", "mol2", "molden", "molreport", "moo", "mop", "mopcrt", "mopin", "mopout", "mpc", "mpd", "mpqc", "mpqcin", "msi", "msms", "nw", "nwo", "outmol", "pc", "pcm", "pdb", "png", "pov", "pqr", "pqs", "prep", "qcin", "qcout", "report", "res", "rsmi", "rxn", "sd", "sdf", "smi", "smiles", "sy2", "t41", "tdd", "test", "therm", "tmol", "txt", "txyz", "unixyz", "vmol", "xed", "xml", "xyz", "yob", "zin"]
 
@@ -413,4 +427,4 @@ if __name__ == '__main__':
     sys.exit("When the force field parameters are given with '-p' you should have your structure in .pdb with the correct labels.")
 
 
-  generate_fragfile(filename, opt, args.force_field_parameters)
+  generate_fragfile(filename, opt, args.force_field_parameters, args.equilibrium_from_geom)
