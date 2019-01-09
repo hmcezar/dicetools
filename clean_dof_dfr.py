@@ -8,6 +8,7 @@ Date: SEP/2016
 """
 
 import os
+import sys
 import argparse
 
 def clean_dofs(fname):
@@ -21,14 +22,34 @@ def clean_dofs(fname):
     frags = {}
     rigidFrags = []
     line = f.readline()
+    fullline = True
     while '$end' not in line.strip():
       if not line.strip():
         line = f.readline()
         continue
-      frags[int(line.split()[0])] = [int(x) for x in line.split()[1:-1]]
-      frags[int(line.split()[0])].append(line.split()[-1])
-      if frags[int(line.split()[0])][-1].upper() == 'R': 
-        rigidFrags.append(int(line.split()[0]))
+      if fullline:
+        fragnum = int(line.split()[0])
+      if "[" in line and "]" in line:
+        frags[fragnum] = [int(x) for x in line.split()[2:-2]]
+        frags[fragnum].append(line.split()[-1])
+      elif "[" in line and "]" not in line:
+        fullline = False
+        frags[fragnum] = [int(x) for x in line.split()[2:]]
+      elif "[" not in line and "]" not in line:
+        if fullline:
+          print("You're supposed to use [] to delimit your fragments.")
+          sys.exit(0)
+        for frag in [int(x) for x in line.split()]:
+          frags[fragnum].append(frag)
+      else:
+        fullline = True
+        for frag in [int(x) for x in line.split()[:-2]]:
+          frags[fragnum].append(frag)
+        frags[fragnum].append(line.split()[-1])
+
+      if fullline:
+        if frags[fragnum][-1].upper() == 'R': 
+          rigidFrags.append(fragnum)
       line = f.readline()
     nfrags = len(frags.keys())
 
@@ -46,26 +67,6 @@ def clean_dofs(fname):
       line = f.readline()
 
     # start removing the dofs
-    
-    # remove every unused bond
-    # bonds = []
-    # line = f.readline()
-    # while line.strip() != '$bond':
-    #   line = f.readline()
-    # line = f.readline()
-    # while '$end' not in line.strip():
-    #   if not line.strip():
-    #     line = f.readline()
-    #     continue
-    #   save = True
-    #   a1, a2 = [int(x) for x in line.split()[:2]]
-    #   for rig in rigidFrags:
-    #     if (a1 in frags[rig]) and (a2 in frags[rig]):
-    #       save = False
-    #   if save:
-    #     bonds.append(line)
-    #   line = f.readline()
-
     # just append all bonds, since they are used to determine the fnb in DICE
     bonds = []
     line = f.readline()
@@ -145,9 +146,12 @@ def clean_dofs(fname):
     print('$atoms fragments')
     for frag in frags.keys():
       string = ""
-      string += str(frag)+"\t"
-      for el in frags[frag]:
-        string += str(el)+"\t"
+      string += str(frag)+"\t[ "
+      for i, el in enumerate(frags[frag]):
+        if i == len(frags[frag])-1:
+          string += "] "+str(el)
+        else:
+          string += str(el)+"\t"
       print(string)
     print('$end atoms fragments\n')
 
