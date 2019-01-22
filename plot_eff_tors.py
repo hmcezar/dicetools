@@ -300,9 +300,34 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
       line = f.readline()
     fnum = 1
     line = f.readline()
+    fnd_delim = False
     while (line.strip().lower() != "$end atoms fragments"):
-      fragInfo[fnum] = [int(x) for x in line.split()[1:-1]]
-      fnum += 1
+      if not line.strip():
+        line = f.readline()
+        continue
+
+      if "[" in line and "]" in line:
+        fragInfo[fnum] = [int(x) for x in line.split()[2:-2]]
+        fnum += 1
+        fnd_delim = False
+      elif "[" in line:
+        fnd_delim = True
+        fragInfo[fnum] = [int(x) for x in line.split()[2:]]
+      elif "[" not in line and "]" not in line:
+        if not fnd_delim:
+          print("It seems like the fragments in your .dfr are not delimited by []'s as in \"1 [ 1 2 3 ] R\"")
+          sys.exit(0)
+        for atom in [int(x) for x in line.split()]:
+          fragInfo[fnum].append(atom)
+      else:
+        if not fnd_delim:
+          print("It seems like the fragments in your .dfr are not delimited by []'s as in \"1 [ 1 2 3 ] R\"")
+          sys.exit(0)
+        for atom in [int(x) for x in line.split()[:-2]]:
+          fragInfo[fnum].append(atom)
+        fnum += 1
+        fnd_delim = False
+
       line = f.readline()
 
     # read the fragment connections
