@@ -8,8 +8,8 @@ Date: JAN/2019
 import os
 import sys
 import argparse
-import openbabel
 import tempfile
+import openbabel
 import pybel
 
 # from https://stackoverflow.com/a/11541495
@@ -108,6 +108,11 @@ def read_dfr_dof(dfrfile):
   return dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih
 
 def read_txt_to_mol(txtfile):
+  # lists to store the charges and LJ parameters
+  q = []
+  eps = []
+  sig = []
+
   # convert the .txt to a .xyz to read in pybel mol to perceive all the bonds, angles, dihedrals..
   fd, temp_path = tempfile.mkstemp(suffix=".xyz")
   fxyz = os.fdopen(fd,'w')
@@ -130,10 +135,17 @@ def read_txt_to_mol(txtfile):
     fxyz.write("%d\nGenerated from %s\n" % (natoms,txtfile))
     
     for i in range(natoms):
+      # write the atomic symbol and coordinates
       line = f.readline()
       atnum = int(line.split()[1])
       x, y, z = [float(x) for x in line.split()[2:5]]
       fxyz.write("%s\t%f\t%f\t%f\n" % (etab.GetSymbol(atnum), x, y, z))
+
+      # store the parameters
+      qv, epsv, sigv = [float(x) for x in line.split()[5:]]
+      q.append(qv)
+      eps.append(epsv)
+      sig.append(sigv)
   
   fxyz.close()
 
@@ -141,14 +153,14 @@ def read_txt_to_mol(txtfile):
   mol = pybel.readfile("xyz", temp_path).__next__()
   os.remove(temp_path)
 
-  return mol
+  return mol, q, eps, sig
 
-def check_parameters(dfrfile, txtfile):
+def read_parameters(dfrfile, txtfile):
   # read the degrees of freedom from dfr into dictionaries
   dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih = read_dfr_dof(dfrfile)
   
   # read the txt to a pybel mol object
-  mol = read_txt_to_mol(txtfile)
+  mol, q, eps, sig = read_txt_to_mol(txtfile)
 
   # check if all bonds are present in the .dfr
   bondIterator = openbabel.OBMolBondIter(mol.OBMol)
@@ -179,6 +191,7 @@ def check_parameters(dfrfile, txtfile):
       print("The dihedral (%s) is not specified in your .dfr. Aborting..." % lbl1)
       sys.exit(0)
 
+  return mol, q, eps, sig, dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Receives the DICE input files .dfr and .txt to generate the GROMACS input files .itp and .gro.")
@@ -188,4 +201,5 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  check_parameters(args.dfrfile, args.txtfile)
+  # read the geometry into a pybel mol, the LJ+Coulomb into lists and the dfr paramaters into dictionaries
+  mol, q, eps, sig, dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih = read_parameters(args.dfrfile, args.txtfile)
