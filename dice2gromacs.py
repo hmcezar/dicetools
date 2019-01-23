@@ -144,13 +144,40 @@ def read_txt_to_mol(txtfile):
   return mol
 
 def check_parameters(dfrfile, txtfile):
-  # read the degrees of freedom from dfr into lists
+  # read the degrees of freedom from dfr into dictionaries
   dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih = read_dfr_dof(dfrfile)
   
   # read the txt to a pybel mol object
   mol = read_txt_to_mol(txtfile)
 
+  # check if all bonds are present in the .dfr
+  bondIterator = openbabel.OBMolBondIter(mol.OBMol)
+  for bond in bondIterator:
+    lbl1 = str(bond.GetBeginAtom().GetId()+1)+" "+str(bond.GetEndAtom().GetId()+1)
+    lbl2 = str(bond.GetEndAtom().GetId()+1)+" "+str(bond.GetBeginAtom().GetId()+1)
+    if (lbl1 not in dfrBonds) and (lbl2 not in dfrBonds):
+      print("The bond (%s) is not specified in your .dfr. Aborting..." % lbl1)
+      sys.exit(0)
 
+  # check if all angles are present in the .dfr
+  angleIterator = openbabel.OBMolAngleIter(mol.OBMol)
+  for angle in angleIterator:
+    angidx = [str(x+1) for x in angle]
+    lbl1 = angidx[1]+" "+angidx[0]+" "+angidx[2]
+    lbl2 = angidx[2]+" "+angidx[0]+" "+angidx[1]
+    if (lbl1 not in dfrAngles) and (lbl2 not in dfrAngles):
+      print("The angle (%s) is not specified in your .dfr. Aborting..." % lbl1)
+      sys.exit(0)
+
+  # check if all dihedrals are present in the .dfr
+  torsionIterator = openbabel.OBMolTorsionIter(mol.OBMol)
+  for torsional in torsionIterator:
+    torsidx = [str(x+1) for x in torsional]
+    lbl1 = torsidx[0]+" "+torsidx[1]+" "+torsidx[2]+" "+torsidx[3]
+    lbl2 = torsidx[3]+" "+torsidx[2]+" "+torsidx[1]+" "+torsidx[0]
+    if (lbl1 not in dfrDihedrals) and (lbl2 not in dfrDihedrals):
+      print("The dihedral (%s) is not specified in your .dfr. Aborting..." % lbl1)
+      sys.exit(0)
 
 
 if __name__ == '__main__':
