@@ -192,6 +192,17 @@ def generate_fragfile(filename, outtype, ffparams=None, eqgeom=False):
 
         line = f.readline()
 
+    # check if there are unused labels
+    for lbl in charges.keys():
+      fnd = False
+      for i in idToAtomicLabel:
+        if lbl == idToAtomicLabel[i]:
+          fnd = True
+          break
+      if not fnd:
+        print("!!! WARNING: There are unused atoms in your parameter file (%s) !!!" % lbl)
+
+
   # split the molecule
   fragments, fragConnection, dummyToAtom = split_mol_fragments_daylight(mol)
 
