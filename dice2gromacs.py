@@ -11,6 +11,10 @@ import argparse
 import tempfile
 import openbabel
 import pybel
+try:
+  from Queue import Queue
+except:
+  from queue import Queue
 
 # from https://stackoverflow.com/a/11541495
 def extant_file(x):
@@ -163,6 +167,42 @@ def read_txt_to_mol(txtfile):
 
   return mol, q, eps, sig
 
+
+def get_pairs(mol):
+  infty = -1
+
+  distPairs = []
+  # run BFS exploration for each atom to find the distance to others
+  for atom in mol.atoms:
+    q = Queue()
+
+    vis = [False] * len(mol.atoms)
+    dist = [infty] * len(mol.atoms)
+
+    vis[atom.idx-1] = True
+    dist[atom.idx-1] = 0
+    q.put(atom)
+
+    while not q.empty():
+      k = q.get()
+      # mark children as visited and queue them
+      children = [pybel.Atom(x) for x in openbabel.OBAtomAtomIter(k.OBAtom)]
+      for child in children:
+        if not vis[child.idx-1]:
+          vis[child.idx-1] = True
+          dist[child.idx-1] = dist[k.idx-1] + 1
+          q.put(child)
+
+    for i in range(len(mol.atoms)):
+      if (dist[i] == 3):
+        pair1 = "%d %d" % (atom.idx, i+1)
+        pair2 = "%d %d" % (i+1, atom.idx)
+        if (pair1 not in distPairs) and (pair2 not in distPairs):
+          distPairs.append(pair1)
+
+  return distPairs
+
+
 def read_parameters(dfrfile, txtfile):
   # read the degrees of freedom from dfr into dictionaries
   dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih = read_dfr_dof(dfrfile)
@@ -257,9 +297,10 @@ UNL              3
   fcontent += """
 [ dihedrals ]
 ; proper dihedrals - converted to the RB form from Fourier type if OPLS
-;   ai     aj     ak     al   func    C0          C1          C2          C3          C4          C5
+;   ai     aj     ak     al   func    params
 """
 
+  fimp = ""
   for dih in dfrDihedrals:
     ai, aj, ak, al = [int(x) for x in dih.split()]
     if dfrDihedrals[dih][0].lower() == "amber":
@@ -273,15 +314,19 @@ UNL              3
           cnt += 1
         elif ((ak == bond.GetBeginAtom().GetId()+1) and (al == bond.GetEndAtom().GetId()+1)) or ((al == bond.GetBeginAtom().GetId()+1) and (ak == bond.GetEndAtom().GetId()+1)):
           cnt += 1
+
       if cnt == 3:
         func = 9
+        fparam = [cal2j(float(x))/2.0 for x in dfrDihedrals[dih][1:4]]
+        for i, term in enumerate(fparam,1):
+          if term != 0.0:
+            fcontent += "%6d %6d %6d %6d      %1d  %6.2f   %9.5f   %d\n" % (ai, aj, ak, al, func, float(dfrDihedrals[dih][i+3]), term, i)
       else:
         func = 4
-
-      fparam = [cal2j(float(x))/2.0 for x in dfrDihedrals[dih][1:4]]
-      for i, term in enumerate(fparam,1):
-        if term != 0.0:
-          fcontent += "%6d %6d %6d %6d      %1d  %6.2f   %9.5f   %d\n" % (ai, aj, ak, al, func, float(dfrDihedrals[dih][i+3]), term, i)
+        fparam = [cal2j(float(x))/2.0 for x in dfrDihedrals[dih][1:4]]
+        for i, term in enumerate(fparam,1):
+          if term != 0.0:
+            fimp += "%6d %6d %6d %6d      %1d  %6.2f   %9.5f   %d\n" % (ai, aj, ak, al, func, float(dfrDihedrals[dih][i+3]), term, i)
 
     elif dfrDihedrals[dih][0].lower() == "opls":
       fparam = [cal2j(float(x)) for x in dfrDihedrals[dih][1:4]]
@@ -296,13 +341,35 @@ UNL              3
       print("Error: Dihedral type (%s) found for dihedral %s in .dfr is not valid." % (dfrDihedrals[dih][0], dih))
       sys.exit(0)
 
+  # write the improper dihedrals
+  if fimp or dfrImpDih:
+    fcontent += """
+[ dihedrals ]
+; improper dihedrals
+;   ai     aj     ak     al   func    params
+"""
+  if fimp:
+    fcontent += fimp
+
+  for idih in dfrImpDih:
+    ai, aj, ak, al = [int(x) for x in idih.split()]
+    fcontent += "%6d %6d %6d %6d      4  %6.2f   %9.5f   %d\n" % (ai, aj, ak, al, float(dfrImpDih[idih][1]), cal2j(float(dfrImpDih[idih][0])), 2)
+
+  # write the pairs
+  fcontent += """
+[ pairs ]
+"""
+  pairs = get_pairs(mol)
+  for pair in pairs:
+    ai, aj = [int(x) for x in pair.split()]
+    fcontent += "%6d %6d    1\n" % (ai, aj)
+
   return fcontent
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Receives the DICE input files .dfr and .txt to generate the GROMACS input files .itp and .gro.")
   parser.add_argument("dfrfile", type=extant_file, help="the DICE .dfr")
   parser.add_argument("txtfile", type=extant_file, help="the DICE .txt")
-  # parser.add_argument("--eq-from-geom", "-g", help="get the equilibrium values for bonds and angles from geometry instead of force field values.", action="store_true")
 
   args = parser.parse_args()
 
