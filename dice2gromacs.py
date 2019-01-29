@@ -117,6 +117,23 @@ def read_dfr_dof(dfrfile):
       elif "$improper" in line:
         dfrImpDih = read_improper(f)
 
+  # check if everything was found and raise error if not
+  try:
+    dfrBonds
+  except:
+    print("Error: The bonds section was not found in the .dfr, please check your topology.")
+    sys.exit(0)
+  try:
+    dfrAngles
+  except:
+    print("Error: The angles section was not found in the .dfr, please check your topology.")
+    sys.exit(0)
+  try:
+    dfrDihedrals
+  except:
+    print("Error: The dihedrals section was not found in the .dfr, please check your topology.")
+    sys.exit(0)
+
   return dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih
 
 def read_txt_to_mol(txtfile):
