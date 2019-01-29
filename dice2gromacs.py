@@ -206,6 +206,8 @@ def itp_from_params(mol, q, eps, sig, dfrBonds, dfrAngles, dfrDihedrals, dfrImpD
   # table to convert atomic number to symbols
   etab = openbabel.OBElementTable()
 
+  # !!! units are converted as the reverse of: http://chembytes.wikidot.com/oplsaagro2tnk and based on GROMACS manual
+
   # write header
   fcontent = """
 
@@ -218,7 +220,7 @@ def itp_from_params(mol, q, eps, sig, dfrBonds, dfrAngles, dfrDihedrals, dfrImpD
 """
   # write the atomtypes
   for i, atom in enumerate(mol.atoms):
-    fcontent += "att_%03d   %s%03d   %3.4f   0.000    A    %.5e    %.5e\n" % (i+1, etab.GetSymbol(atom.atomicnum), i+1, atom.atomicmass, a2nm(sig[i]), cal2j(eps[i]))
+    fcontent += "att_%03d   %s%03d   %7.4f   0.000    A    %.5e    %.5e\n" % (i+1, etab.GetSymbol(atom.atomicnum), i+1, atom.atomicmass, a2nm(sig[i]), cal2j(eps[i]))
 
   fcontent += """
 [ moleculetype ]
@@ -231,7 +233,7 @@ UNL              3
 
   # write the atoms
   for i, atom in enumerate(mol.atoms):
-    fcontent += "%6d   att_%03d   1   UNL    %s%03d   1    %.4f   %3.4f\n" % (i+1, i+1, etab.GetSymbol(atom.atomicnum), i+1, q[i], atom.atomicmass)
+    fcontent += "%6d   att_%03d   1   UNL    %s%03d   1    %.4f   %7.4f\n" % (i+1, i+1, etab.GetSymbol(atom.atomicnum), i+1, q[i], atom.atomicmass)
 
   # write the bonds
   fcontent += """
@@ -255,7 +257,44 @@ UNL              3
   fcontent += """
 [ dihedrals ]
 ; proper dihedrals - converted to the RB form from Fourier type if OPLS
+;   ai     aj     ak     al   func    C0          C1          C2          C3          C4          C5
 """
+
+  for dih in dfrDihedrals:
+    ai, aj, ak, al = [int(x) for x in dih.split()]
+    if dfrDihedrals[dih][0].lower() == "amber":
+      # check if it's a proper or improper dihedral
+      bondIterator = openbabel.OBMolBondIter(mol.OBMol)
+      cnt = 0
+      for bond in bondIterator:
+        if ((ai == bond.GetBeginAtom().GetId()+1) and (aj == bond.GetEndAtom().GetId()+1)) or ((aj == bond.GetBeginAtom().GetId()+1) and (ai == bond.GetEndAtom().GetId()+1)):
+          cnt += 1
+        elif ((aj == bond.GetBeginAtom().GetId()+1) and (ak == bond.GetEndAtom().GetId()+1)) or ((ak == bond.GetBeginAtom().GetId()+1) and (aj == bond.GetEndAtom().GetId()+1)):
+          cnt += 1
+        elif ((ak == bond.GetBeginAtom().GetId()+1) and (al == bond.GetEndAtom().GetId()+1)) or ((al == bond.GetBeginAtom().GetId()+1) and (ak == bond.GetEndAtom().GetId()+1)):
+          cnt += 1
+      if cnt == 3:
+        func = 9
+      else:
+        func = 4
+
+      fparam = [cal2j(float(x))/2.0 for x in dfrDihedrals[dih][1:4]]
+      for i, term in enumerate(fparam,1):
+        if term != 0.0:
+          fcontent += "%6d %6d %6d %6d      %1d  %6.2f   %9.5f   %d\n" % (ai, aj, ak, al, func, float(dfrDihedrals[dih][i+3]), term, i)
+
+    elif dfrDihedrals[dih][0].lower() == "opls":
+      fparam = [cal2j(float(x)) for x in dfrDihedrals[dih][1:4]]
+      c0 = fparam[1] + 0.5*(fparam[0]+fparam[2])
+      c1 = 0.5*(-fparam[0]+3.0*fparam[2])
+      c2 = -fparam[1]
+      c3 = -2.0*fparam[2]
+      c4 = 0.0
+      c5 = 0.0
+      fcontent += "%6d %6d %6d %6d      3  %9.5f   %9.5f   %9.5f   %9.5f   %9.5f   %9.5f\n" % (ai, aj, ak, al, c0, c1, c2, c3, c4, c5)
+    else:
+      print("Error: Dihedral type (%s) found for dihedral %s in .dfr is not valid." % (dfrDihedrals[dih][0], dih))
+      sys.exit(0)
 
   return fcontent
 
