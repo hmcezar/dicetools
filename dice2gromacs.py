@@ -442,7 +442,6 @@ if __name__ == '__main__':
     print("Error: Invalid force field (%s). Select opls or amber." % args.force_field)
     sys.exit(0)
 
-
   # read the geometry into a pybel mol, the LJ+Coulomb into lists and the dfr paramaters into dictionaries
   mol, q, eps, sig, dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih = read_parameters(args.dfrfile, args.txtfile)
 
@@ -464,7 +463,6 @@ if __name__ == '__main__':
     r = sqrt(x*x + y*y + z*z)
     if r > maxd:
       maxd = r
-      datom = atom.idx
 
   # modify the unit cell and translate the molecule to the center of box
   boxsize = maxd + 100.0
