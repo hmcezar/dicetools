@@ -15,7 +15,7 @@ def get_solute(fname, natoms):
 		printed = 0
 		line = f.readline()
 		while line:
-			if "Configuration number" in line:
+			if "Configuration" in line:
 				print_atoms = True
 				sys.stdout.write("%d\n%s\n" % (natoms, line.rstrip()))
 			elif ((printed < natoms) and print_atoms):
