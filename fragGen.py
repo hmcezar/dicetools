@@ -336,7 +336,7 @@ def generate_fragfile(filename, outtype, ffparams=None, eqgeom=False):
       for atom in atomIterator:
         # print(atom.GetHyb(), atom.GetAtomicNum(), atom.GetValence())
         # if atom.GetAtomicNum() == 6 and atom.GetValence() == 3:
-        if atom.GetHyb() == 2:
+        if atom.GetHyb() == 2 and atom.GetValence() == 3:
           bondIterator = atom.BeginBonds()
           nbrAtom = atom.BeginNbrAtom(bondIterator)
           connectedAtoms = []
