@@ -252,7 +252,7 @@ def generate_fragfile(filename, outtype, ffparams=None, eqgeom=False):
       fragslst.append(atomlst)
       for atom in atomlst:
         f.write(atom+"\t")                    
-      if outtype == "min":
+      if outtype == "min" or outtype == "header":
         f.write("] R\n")
       else:
         f.write("] F\n")
