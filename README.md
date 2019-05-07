@@ -100,6 +100,11 @@ This is specially useful for computing, e.g., the number of *cis* configurations
 Given a trajectory in .xyz, this script select a few configurations separated by an interval of steps and outputs them to STDOUT.
 This is useful if you saved configurations too often during the simulation and want to filter just a few of them.
 
+### solute_en_vs_torsion.py
+Receives a text file contaning one dihedral angle per line (generated from calculate_dihedrals.py) and the .ien and .e12 from DICE.
+Two plots are generated: one that associates each dihedral angle to an intra molecular energy (U_{intra}) and solute solvent energy (U_{xs}), plotting the spread of the values as a scatter plot; and a second plot where the U_{intra} and U_{xs} are binned and then averaged (for a range of dihedral angles some configurations exist, the energy of these configurations are averaged), plotting as error bars the standard deviation of each of these averages.
+A fourth optional argument of the script is the number of bins used to the second plot (default = 36, meaning each bin is 10 degrees wide).
+
 ## Authorship
 Most of the scripts here were written by Henrique Musseli Cezar, with the exception of DiceWin which was written by Thiago de Souza Duarte.
 These tools were written with the important contribution of Prof. Kaline Coutinho, who supervised the work and gave suggestions to the improvement of the tools.
