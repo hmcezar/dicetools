@@ -930,10 +930,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
 
       if (graphHold == False):
         self.plotTitles, self.histogramTitles = [], []
-        self.graphxyAxes.hold(False)
         self.graphxyAxes.clear()
-      else:
-        self.graphxyAxes.hold(True)
       
       self.graphxyAxes.axis('off')
       
@@ -970,15 +967,11 @@ class graphMainWindow(QtWidgets.QMainWindow):
           if (self.extension == 'gr'):
             self.canvasInfo['data'] = [data[0], data[1], data[2]]
             if (self.horizontalGrLine == False or graphHold == False and self.canvasInfo['type'] != 'ueff'):
-              self.graphxyAxes.hold(True)
               self.graphxyAxes.axhline(y=1, c='k', linestyle='-', label='_nolegend_')
               self.horizontalGrLine = True
-              self.graphxyAxes.hold(graphHold)
             if (self.horizontalUeffLine == False or graphHold == False):
-              self.graphxyAxes.hold(True)
               self.graphxyAxes.axhline(y=0, c='k', linestyle='-', label='_nolegend_')
               self.horizontalUeffLine = True
-              self.graphxyAxes.hold(graphHold)
             self.molDimAdjust = False
             grLabel = self.grMenuItems[gid]
             self.plotTitles.append(r'${}$'.format(grLabel))
@@ -1012,8 +1005,8 @@ class graphMainWindow(QtWidgets.QMainWindow):
                                     handlelength = 0.6,
                                     borderpad = -0.8)
          
-          xmin, xmax = self.graphxyAxes.get_xlim()
-          ymin, ymax = self.graphxyAxes.get_ylim()
+          xmin, xmax = self.graphxyAxes.xaxis.get_data_interval()
+          ymin, ymax = self.graphxyAxes.yaxis.get_data_interval()
           self.setCanvasBoundaries(xmin, xmax, ymin, ymax) 
           
         
@@ -1075,12 +1068,10 @@ class graphMainWindow(QtWidgets.QMainWindow):
           stdDev = numpy.sqrt(deviation / len(data[1]))
 
           points = numpy.linspace(float(bins[0]), float(bins[-1]), 250)
-          self.graphxyAxes.hold(True)
           gaussian = self.graphxyAxes.plot(points, 
                                            binwidth*( ( 1 / (stdDev * numpy.sqrt(2 * 3.14)) ) * numpy.exp( -0.5 * ((points - mean) / stdDev)**2) ), 
                                            c='k', 
                                            label='_nolegend_')
-          self.graphxyAxes.hold(graphHold)
           
           self.meanLabel.show()
           self.stdDeviationLabel.show()
@@ -1090,8 +1081,8 @@ class graphMainWindow(QtWidgets.QMainWindow):
           binCenter = [ (bins[i-1] + abs(bins[i] - bins[i-1])*0.5) for i in range(1, len(bins))]
 
           
-          xmin, xmax = self.graphxyAxes.get_xlim()
-          ymin, ymax = self.graphxyAxes.get_ylim()
+          xmin, xmax = self.graphxyAxes.xaxis.get_data_interval()
+          ymin, ymax = self.graphxyAxes.yaxis.get_data_interval()          
           self.setCanvasBoundaries(xmin, xmax, ymin, ymax)
           self.canvasInfo['title'] = '{}'.format(title)
           self.canvasInfo['data'] = [n, binCenter]
@@ -1135,7 +1126,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
       self.graphxyCanvas.draw()
       
     except (AttributeError) as e:
-      #print(e)
+      # print(e)
       self.status.showMessage('ERROR: failed to plot data. Please check the axes range values.', 3456)
     except (IndexError) as e:
       #print(e)
@@ -1219,11 +1210,10 @@ class graphMainWindow(QtWidgets.QMainWindow):
       # adjust boundaries
       self.graphxyAxes.plot(self.canvasInfo['data'][0][:LT+1], self.canvasInfo['data'][1][:LT+1], linestyle='-')
       
-      self.graphxyAxes.hold(False)
+      self.graphxyAxes.clear()
       plot = self.graphxyAxes.plot(self.canvasInfo['data'][0], self.canvasInfo['data'][1], linestyle='', marker='.', label=r'$C(t)$')
       x, X = self.graphxyAxes.get_xlim()
       y, Y = self.graphxyAxes.get_ylim()
-      self.graphxyAxes.hold(True)
       plot = self.graphxyAxes.plot(xnew, yuser, linestyle='--', c='k', linewidth='1.5', label=r'$guess$')
       plot = self.graphxyAxes.plot(xnew, yfit, linestyle='-', c='r', linewidth='1.5', label=r'$fit$')
       
@@ -1237,10 +1227,9 @@ class graphMainWindow(QtWidgets.QMainWindow):
                                     prop = {'size':12},
                                     handlelength = 0.5)
       
-      self.graphxyAxes.hold(self.checkOverplot.isChecked())
-      
-      xmin, xmax = self.graphxyAxes.get_xlim()
-      ymin, ymax = self.graphxyAxes.get_ylim()
+      xmin, xmax = self.graphxyAxes.xaxis.get_data_interval()
+      ymin, ymax = self.graphxyAxes.yaxis.get_data_interval()
+
       self.setCanvasBoundaries(xmin, LT, ymin, ymax)
       self.applyCanvasBoundaries()
       self.graphxyCanvas.draw()
@@ -1545,14 +1534,13 @@ class graphMainWindow(QtWidgets.QMainWindow):
     self.graphxyAxes.axis('off')
     self.graphxyAxes = self.graphxyFigure.add_axes([0.075, 0.075, 0.7, 0.88], facecolor='white')
     
-    self.graphxyAxes.hold(graphHold)
+    if not graphHold:
+      self.graphxyAxes.clear()
     self.graphxyAxes.plot(r, newGr, linestyle='-')
     self.molDimAdjust = True
     if (self.horizontalGrLine == False or graphHold == False):
-      self.graphxyAxes.hold(True)
       self.graphxyAxes.axhline(y=1, c='k', linestyle='-', label='_nolegend_')
       self.horizontalGrLine = True
-      self.graphxyAxes.hold(graphHold)
     
     grLabel = self.grMenuItems[gid]
     self.plotTitles.append(r'${}*$'.format(grLabel))
@@ -1593,16 +1581,12 @@ class graphMainWindow(QtWidgets.QMainWindow):
           self.integralLabel.setText('<small><b>INTEGRAL OF G(R):</b></small>   N(%.3f) = %.3f' % (self.xData[index], integral))
 
           if (self.integralMarker == False):
-            self.graphxyAxes.hold(True)
             marker = self.graphxyAxes.plot(event.xdata, event.ydata, 'rx', label='_nolegend_')
             self.integralIndex = nPlots
-            self.graphxyAxes.hold(False)
             self.integralMarker = True
           else:
-            self.graphxyAxes.hold(True)
             self.graphxyAxes.lines.pop(self.integralIndex)
             marker = self.graphxyAxes.plot(event.xdata, event.ydata, 'rx', label='_nolegend_')
-            self.graphxyAxes.hold(False)
 
           self.graphxyCanvas.draw()
         except (TypeError, IndexError) as e:
