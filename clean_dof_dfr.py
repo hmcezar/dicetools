@@ -10,6 +10,7 @@ Date: SEP/2016
 import os
 import sys
 import argparse
+import io
 
 def clean_dofs(fname):
   with open(fname,'r') as f:
@@ -142,8 +143,9 @@ def clean_dofs(fname):
           imp_dihedrals.append(line)
         line = f.readline()
 
-    # print the simplified dfr to screen
-    print('$atoms fragments')
+    # print the simplified dfr to string
+    output = io.StringIO()
+    print('$atoms fragments', file=output)
     for frag in frags.keys():
       string = ""
       string += str(frag)+"\t[ "
@@ -152,35 +154,39 @@ def clean_dofs(fname):
           string += "] "+str(el)
         else:
           string += str(el)+"\t"
-      print(string)
-    print('$end atoms fragments\n')
+      print(string, file=output)
+    print('$end atoms fragments\n', file=output)
 
-    print('$fragment connection')
+    print('$fragment connection', file=output)
     for line in fConnLines:
-      print("%s" % line.strip())
-    print('$end fragment connection\n')
+      print("%s" % line.strip(), file=output)
+    print('$end fragment connection\n', file=output)
 
-    print('$bond')
+    print('$bond', file=output)
     for line in bonds:
-      print("%s" % line.strip())
-    print('$end bond\n')
+      print("%s" % line.strip(), file=output)
+    print('$end bond\n', file=output)
 
     if len(angles) > 0:
-      print('$angle')
+      print('$angle', file=output)
       for line in angles:
-        print("%s" % line.strip())
-      print('$end angle\n')
+        print("%s" % line.strip(), file=output)
+      print('$end angle\n', file=output)
 
-    print('$dihedral')
+    print('$dihedral', file=output)
     for line in dihedrals:
-      print("%s" % line.strip())
-    print('$end dihedral\n')
+      print("%s" % line.strip(), file=output)
+    print('$end dihedral', file=output)
 
     if (len(imp_dihedrals) > 0) and impd:
-      print('$improper dihedral')
+      print('\n$improper dihedral', file=output)
       for line in imp_dihedrals:
-        print("%s" % line.strip())
-      print('$end improper dihedral\n')
+        print("%s" % line.strip(), file=output)
+      print('$end improper dihedral', file=output)
+
+    contents = output.getvalue()
+    output.close()
+    return contents
 
 
 if __name__ == '__main__':
@@ -191,4 +197,4 @@ if __name__ == '__main__':
   filename = os.path.realpath(args.filename)
   base, ext = os.path.splitext(filename)
 
-  clean_dofs(filename)
+  print(clean_dofs(filename))
