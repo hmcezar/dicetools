@@ -14,6 +14,7 @@ import openbabel
 import pybel
 from collections import OrderedDict
 from fragGen import generate_fragfile
+from clean_dof_dfr import clean_dofs
 
 def nm2a(num):
 	return round(num*10.0,4)
@@ -199,7 +200,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 def strip_comment(string, token=';'):
 	return string.split(token)[0].strip()
 
-def top2dfr(topfile, geomfile, ignoreba, eqgeom, ffname, path):
+def top2dfr(topfile, geomfile, flexfrag, eqgeom, ffname, path):
 	if "amber" in ffname:
 		potname = "AMBER"
 	else:
@@ -327,7 +328,10 @@ def top2dfr(topfile, geomfile, ignoreba, eqgeom, ffname, path):
 				continue
 			else:
 				while line.strip() != "$end fragment connection":
-					fraginfo.append(line)
+					if flexfrag:
+						fraginfo.append(line.replace("R","M"))
+					else:
+						fraginfo.append(line)
 					line = f.readline()
 				fraginfo.append(line)
 				break
@@ -342,46 +346,40 @@ def top2dfr(topfile, geomfile, ignoreba, eqgeom, ffname, path):
 	# get the bond info
 	bonds = []
 	for line in tdata["[ bonds ]"]:
-		if (not ignoreba):
-			# get parameters from user's .itp
-			if (len(line.split()) == 5):
-				if eqgeom:
-					bonds.append(line.split()[0]+" "+line.split()[1]+"     \t"+str(round(j2cal(float(line.split()[4]))/(200.0),4))+"\t"+str(round(mol.OBMol.GetBond(int(line.split()[0]),int(line.split()[1])).GetLength(),4))+"\n")
-				else:
-					bonds.append(line.split()[0]+" "+line.split()[1]+"     \t"+str(round(j2cal(float(line.split()[4]))/(200.0),4))+"\t"+str(nm2a(float(line.split()[3])))+"\n")
-			# get parameters from ffbonded.itp
+		# get parameters from user's .itp
+		if (len(line.split()) == 5):
+			if eqgeom:
+				bonds.append(line.split()[0]+" "+line.split()[1]+"     \t"+str(round(j2cal(float(line.split()[4]))/(200.0),4))+"\t"+str(round(mol.OBMol.GetBond(int(line.split()[0]),int(line.split()[1])).GetLength(),4))+"\n")
 			else:
-				ffline = lookup_ffbond(atoms[line.split()[0]][9], atoms[line.split()[1]][9], path)
-				if ffline == "not found":
-					bonds.append(line.split()[0]+" "+line.split()[1]+"     \tXXX\t"+str(round(mol.OBMol.GetBond(int(line.split()[0]),int(line.split()[1])).GetLength(),4))+"\n")
-				elif eqgeom:
-					bonds.append(line.split()[0]+" "+line.split()[1]+"     \t"+str(round(j2cal(float(ffline.split()[4]))/(200.0),4))+"\t"+str(round(mol.OBMol.GetBond(int(line.split()[0]),int(line.split()[1])).GetLength(),4))+"\n")
-				else:
-					bonds.append(line.split()[0]+" "+line.split()[1]+"     \t"+str(round(j2cal(float(ffline.split()[4]))/(200.0),4))+"\t"+str(nm2a(float(ffline.split()[3])))+"\n")
+				bonds.append(line.split()[0]+" "+line.split()[1]+"     \t"+str(round(j2cal(float(line.split()[4]))/(200.0),4))+"\t"+str(nm2a(float(line.split()[3])))+"\n")
+		# get parameters from ffbonded.itp
 		else:
-			bonds.append(line)
+			ffline = lookup_ffbond(atoms[line.split()[0]][9], atoms[line.split()[1]][9], path)
+			if ffline == "not found":
+				bonds.append(line.split()[0]+" "+line.split()[1]+"     \tXXX\t"+str(round(mol.OBMol.GetBond(int(line.split()[0]),int(line.split()[1])).GetLength(),4))+"\n")
+			elif eqgeom:
+				bonds.append(line.split()[0]+" "+line.split()[1]+"     \t"+str(round(j2cal(float(ffline.split()[4]))/(200.0),4))+"\t"+str(round(mol.OBMol.GetBond(int(line.split()[0]),int(line.split()[1])).GetLength(),4))+"\n")
+			else:
+				bonds.append(line.split()[0]+" "+line.split()[1]+"     \t"+str(round(j2cal(float(ffline.split()[4]))/(200.0),4))+"\t"+str(nm2a(float(ffline.split()[3])))+"\n")
 
 	# get the angle info
 	angles = []
 	for line in tdata["[ angles ]"]:
-		if (not ignoreba):
-			# get parameters from user's .itp
-			if (len(line.split()) == 6):
-				if eqgeom:
-					angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\t"+str(j2cal(float(line.split()[5]))/(2.0))+"\t"+str(round(mol.OBMol.GetAngle(mol.OBMol.GetAtom(int(line.split()[0])),mol.OBMol.GetAtom(int(line.split()[1])),mol.OBMol.GetAtom(int(line.split()[2]))),4))+"\n")
-				else:
-					angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\t"+str(j2cal(float(line.split()[5]))/(2.0))+"\t"+str(float(line.split()[4]))+"\n")
-			# get parameters from ffbonded.itp
+		# get parameters from user's .itp
+		if (len(line.split()) == 6):
+			if eqgeom:
+				angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\t"+str(j2cal(float(line.split()[5]))/(2.0))+"\t"+str(round(mol.OBMol.GetAngle(mol.OBMol.GetAtom(int(line.split()[0])),mol.OBMol.GetAtom(int(line.split()[1])),mol.OBMol.GetAtom(int(line.split()[2]))),4))+"\n")
 			else:
-				ffline = lookup_ffangle(atoms[line.split()[0]][9], atoms[line.split()[1]][9], atoms[line.split()[2]][9], path)
-				if ffline == "not found":
-					angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\tXXX\t"+str(round(mol.OBMol.GetAngle(mol.OBMol.GetAtom(int(line.split()[0])),mol.OBMol.GetAtom(int(line.split()[1])),mol.OBMol.GetAtom(int(line.split()[2]))),4))+"\n")
-				elif eqgeom:
-					angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\t"+str(j2cal(float(ffline.split()[5]))/(2.0))+"\t"+str(round(mol.OBMol.GetAngle(mol.OBMol.GetAtom(int(line.split()[0])),mol.OBMol.GetAtom(int(line.split()[1])),mol.OBMol.GetAtom(int(line.split()[2]))),4))+"\n")
-				else:
-					angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\t"+str(j2cal(float(ffline.split()[5]))/(2.0))+"\t"+ffline.split()[4]+"\n")
+				angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\t"+str(j2cal(float(line.split()[5]))/(2.0))+"\t"+str(float(line.split()[4]))+"\n")
+		# get parameters from ffbonded.itp
 		else:
-			angles.append(line)
+			ffline = lookup_ffangle(atoms[line.split()[0]][9], atoms[line.split()[1]][9], atoms[line.split()[2]][9], path)
+			if ffline == "not found":
+				angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\tXXX\t"+str(round(mol.OBMol.GetAngle(mol.OBMol.GetAtom(int(line.split()[0])),mol.OBMol.GetAtom(int(line.split()[1])),mol.OBMol.GetAtom(int(line.split()[2]))),4))+"\n")
+			elif eqgeom:
+				angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\t"+str(j2cal(float(ffline.split()[5]))/(2.0))+"\t"+str(round(mol.OBMol.GetAngle(mol.OBMol.GetAtom(int(line.split()[0])),mol.OBMol.GetAtom(int(line.split()[1])),mol.OBMol.GetAtom(int(line.split()[2]))),4))+"\n")
+			else:
+				angles.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+"   \tharmonic\t"+str(j2cal(float(ffline.split()[5]))/(2.0))+"\t"+ffline.split()[4]+"\n")
 
 	# get the dihedrals info
 	dihedrals = []
@@ -497,10 +495,17 @@ def top2dfr(topfile, geomfile, ignoreba, eqgeom, ffname, path):
 		if dih4:
 			for line in improper:
 				f.write(line)
-		f.write("$end dihedral\n\n$improper dihedral\n")
-		for line in improper:
-			f.write(line)
-		f.write("$end improper dihedral\n")
+		f.write("$end dihedral\n")
+		if improper:
+			for line in improper:
+				print("\n$improper dihedral\n")
+				f.write(line)
+				f.write("$end improper dihedral\n")
+
+	if not flexfrag:
+		withoutba =	clean_dofs(base+".dfr")
+		with open(base+".dfr", 'w') as f:
+			f.write(withoutba)
 
 	print("The files %s and %s were successfully generated." % (base+".txt",base+".dfr"))
 	# print "Don't forget to check the order of the atoms in the improper dihedrals (central atom first)."
@@ -511,7 +516,7 @@ if __name__ == '__main__':
 	parser.add_argument("geomfile", help="the geometry file used to generate the topology (the order of the atoms must be the same of the topology!)")
 	parser.add_argument("--gromacs-ff-path", "-p", help="specifies the GROMACS top directory (default: /usr/local/gromacs/share/gromacs/top/)", default="/usr/local/gromacs/share/gromacs/top/")
 	parser.add_argument("--force-field", "-f", help="specifies the force field from the list: oplsaa, amber94, amber96, amber99, amber99sb, amber99sb-ildn, ambergs (default OPLS-AA).", default="oplsaa")
-	parser.add_argument("--ignorebondangles", help="ignore the bond and angles parameters - useful if you'll perform a rigid fragment simulation.", action="store_true")
+	parser.add_argument("--flexible-fragments", help="if you will perform a simulation with flexible fragments use this option to have a complete .dfr with all the parameters.", action="store_true")
 	parser.add_argument("--eq-from-geom", "-g", help="get the equilibrium values for bonds and angles from geometry instead of force field values.", action="store_true")
 
 	args = parser.parse_args()
@@ -543,15 +548,5 @@ if __name__ == '__main__':
 			print("Either ffbonded.itp or ffnonbonded.itp are missing in the force field directory")
 			sys.exit(0)
 
-	# get the atomic positions from the geometry file
-	# etab = openbabel.OBElementTable()
-	# mol = pybel.readfile(ext[1:],geomfile).__next__()
-	# molxyzinfo = {}
-	# for i, atom in enumerate(mol,1):
-	# 	molxyzinfo[i] = [etab.GetSymbol(atom.atomicnum),atom.coords]
-
-	# print(molxyzinfo)
-	# sys.exit(0)
-
 	# convert the file
-	top2dfr(args.topfile, args.geomfile, args.ignorebondangles, args.eq_from_geom, ffname, FFPATH)
+	top2dfr(args.topfile, args.geomfile, args.flexible_fragments, args.eq_from_geom, ffname, FFPATH)
