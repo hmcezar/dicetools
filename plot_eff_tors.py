@@ -82,10 +82,10 @@ def get_phi(a1, a2, a3, a4):
   return np.arctan2((np.dot(n,rij)*normrjk)/(normm*normn),np.dot(m,n)/(normm*normn))
 
 def energy_tors_amber(params, phi):
-  return 0.5*(params[0]*(1.0 + cos(phi)) + params[1]*(1.0 + cos(2.0*phi)) + params[2]*(1.0 + cos(3.0*phi)))
+  return 0.5*(params[0]*(1.0 + cos(phi-params[3])) + params[1]*(1.0 + cos(2.0*phi-params[4])) + params[2]*(1.0 + cos(3.0*phi-params[5])))
 
 def energy_tors(params, phi):
-  return 0.5*(params[0]*(1.0 + cos(phi)) + params[1]*(1.0 - cos(2.0*phi)) + params[2]*(1.0 + cos(3.0*phi)))
+  return 0.5*(params[0]*(1.0 + cos(phi+params[3])) + params[1]*(1.0 - cos(2.0*phi+params[4])) + params[2]*(1.0 + cos(3.0*phi+params[5])))
 
 def energy_nonbonded(sigma,epsilon,q1,q2,fclb,flj,r):
   sigr = sigma/r
@@ -382,7 +382,7 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
     line = f.readline()
     while (line.strip().lower() != "$end dihedral"):
       if (int(line.split()[1]) == ab2 and int(line.split()[2]) == ab3) or (int(line.split()[1]) == ab3 and int(line.split()[2]) == ab2):
-        potentialDict[dnum] = [int(line.split()[0]),int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),float(line.split()[5]),float(line.split()[6]),float(line.split()[7]),float(line.split()[8]),float(line.split()[9]),float(line.split()[10])]
+        potentialDict[dnum] = [int(line.split()[0]),int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),float(line.split()[5]),float(line.split()[6]),float(line.split()[7]),float(line.split()[8])*np.pi/180.0,float(line.split()[9])*np.pi/180.0,float(line.split()[10])*np.pi/180.0]
       dnum += 1
       line = f.readline()
 
