@@ -71,7 +71,11 @@ def reorder_itp(itp, mapp):
 
     # read atoms
     lines = []
-    while "opls" in line:
+    while ("opls" in line) or line.strip().startswith(";"):
+      if line.strip().startswith(";"):
+        fout.write(line)
+        f.readline()
+        continue
       lines.append(line)
       line = f.readline()
 
@@ -83,12 +87,15 @@ def reorder_itp(itp, mapp):
       fout.write(line)
       line = f.readline()
 
+    fout.write(line)
+    line = f.readline()
+
     # write the bonds using the right labels
     while "[ angles ]" not in line:
       a1 = int(line.split()[0])-1
       a2 = int(line.split()[1])-1
 
-      constants = "%s\t%s\t%s" % tuple(line.split()[1:])
+      constants = "%s\t%s\t%s" % (tuple(line.split()[1:]))
 
       fout.write("%5d %5d     %s" % (mapp[a1],mapp[a2],constants))
 
