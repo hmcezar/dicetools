@@ -586,7 +586,7 @@ if __name__ == '__main__':
 
   # print output to screen
   print("# Angle in (degrees), energies in (kcal/mol) and dipole moment in (Debye)")
-  fout.write("# Angle in (degrees), energies in (kcal/mol) and dipole moment in (Debye)")
+  fout.write("# Angle in (degrees), energies in (kcal/mol) and dipole moment in (Debye)\n")
   print("# Angle\t\tTotal en\tTors en\t\tNB en\t\tDip mom")
   fout.write("# Angle\t\tTotal en\tTors en\t\tNB en\t\tDip mom\n")
   for ang, ten, nben, dipm in zip(osphi,ostorsen,osnben,osdip):
