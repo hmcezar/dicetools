@@ -7,7 +7,6 @@ Date: MAY/2019
 """
 
 import os
-import sys
 import argparse
 import pybel
 import openbabel
