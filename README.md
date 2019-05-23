@@ -96,6 +96,9 @@ This script receives a .log of the Gaussian calculation performed with the input
 Given a file containing a value per line, this script gives the probability of getting one value in a given interval.
 This is specially useful for computing, e.g., the number of *cis* configurations of a trajectory based on a list of dihedral angles.
 
+### reorder_ligpargen.py
+Sometimes the LigParGen web server scrambles the atoms after running the parametrization. This script receives the original .pdb uploaded to LigParGen and the LigParGen outputs .gro and .itp to reorder these output to have the atoms in the same order of the uploaded .pdb.
+
 ### separate_configs_box.py
 Given a trajectory in .xyz, this script select a few configurations separated by an interval of steps and outputs them to STDOUT.
 This is useful if you saved configurations too often during the simulation and want to filter just a few of them.
