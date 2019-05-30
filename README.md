@@ -15,6 +15,7 @@ To install the libraries with Anaconda, do the following:
 conda install numpy
 conda install -c openbabel openbabel
 conda install matplotlib
+pip install rmsd
 ```
 
 If you want to use the graphical interface of DiceWin to perform some analysis, you will also need some stuff like:
