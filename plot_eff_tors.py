@@ -14,7 +14,7 @@ from numpy import sin
 from numpy import sqrt
 import matplotlib as mpl
 # Force matplotlib to not use any Xwindows backend.
-mpl.use('Agg')
+# mpl.use('Agg')
 import matplotlib.pyplot as plt
 try:
   from Queue import Queue
@@ -242,30 +242,8 @@ def find_rigid_parts(frags, fconn, a1, a2, a3, a4):
 
   return pt1, pt2
 
-def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, printxyz, useamber, gausstop, gaussbot):
 
-  # put gausstop file contents into a string
-  if gausstop:
-    # check the number of lines to append to the comment the dihedral angle
-    topfile = ""
-    with open(gausstop, 'r') as f:
-      for i, line in enumerate(f,1):
-        pass
-
-      f.seek(0)
-
-      for j, line in enumerate(f,1):
-        if (j == i-2):
-          topfile+=line.rstrip()+" dihedral = ANGLEPLACEHOLDER\n"
-        else:
-          topfile+=line
-      
-  # put gaussbot file into a string
-  if gaussbot:
-    with open(gaussbot, 'r') as f:
-      botfile = f.read()
-
-  # read the molecule and nonbonded parameters
+def parse_txt(txtfile):
   atomSp = {}
   atomsCoord = {}
   nbParams = {}
@@ -288,7 +266,10 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
       nbParams[anum] = [float(x) for x in line.split()[5:]]
       anum += 1
 
-  # read the intramolecular parameters, connection info (bonds) and frag info
+  return mult, natoms, atomSp, atomsCoord, nbParams
+
+
+def parse_dfr(dfrfile, ab2, ab3):
   potentialDict = {}
   connInfo = {}
   fragInfo = {}
@@ -371,9 +352,6 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
 
       line = f.readline()
 
-    # based on the fragments, atomic connections and reference dihedral find the two rigid parts to be moved
-    fpt1, fpt2 = find_rigid_parts(fragInfo, fconnInfo, ab1, ab2, ab3, ab4)
-
     # read the dihedral constants
     line = f.readline()
     while (line.strip().lower() != "$dihedral"):
@@ -385,6 +363,41 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
         potentialDict[dnum] = [int(line.split()[0]),int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),float(line.split()[5]),float(line.split()[6]),float(line.split()[7]),float(line.split()[8])*np.pi/180.0,float(line.split()[9])*np.pi/180.0,float(line.split()[10])*np.pi/180.0]
       dnum += 1
       line = f.readline()
+
+  return potentialDict, connInfo, fragInfo, fconnInfo
+
+
+def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, printxyz, useamber, gausstop, gaussbot):
+
+  # put gausstop file contents into a string
+  if gausstop:
+    # check the number of lines to append to the comment the dihedral angle
+    topfile = ""
+    with open(gausstop, 'r') as f:
+      for i, line in enumerate(f,1):
+        pass
+
+      f.seek(0)
+
+      for j, line in enumerate(f,1):
+        if (j == i-2):
+          topfile+=line.rstrip()+" dihedral = ANGLEPLACEHOLDER\n"
+        else:
+          topfile+=line
+      
+  # put gaussbot file into a string
+  if gaussbot:
+    with open(gaussbot, 'r') as f:
+      botfile = f.read()
+
+  # read the molecule and nonbonded parameters
+  mult, natoms, atomSp, atomsCoord, nbParams = parse_txt(txtfile)
+
+  # read the intramolecular parameters, connection info (bonds) and frag info
+  potentialDict, connInfo, fragInfo, fconnInfo = parse_dfr(dfrfile, ab2, ab3)
+
+  # based on the fragments, atomic connections and reference dihedral find the two rigid parts to be moved
+  fpt1, fpt2 = find_rigid_parts(fragInfo, fconnInfo, ab1, ab2, ab3, ab4)
 
   # get the nonbonded factors (0.0, 0.5 or 1.0), which interactions will be evaluated and adjust the constants
   fclb, flj = get_fnb(connInfo, natoms, useamber)
@@ -411,7 +424,7 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
 
   # angle of the first dihedral, to use as reference
   cphi = get_phi(atomsCoord[ab1], abcoord1, abcoord2, atomsCoord[ab4])
-  print("# Initial angle (degrees): %f" % (180.0*cphi/np.pi))
+  # print("# Initial angle (degrees): %f" % (180.0*cphi/np.pi))
 
   # calculate the angle increment based on the total number of points to be calculated
   dphi = 2.0*np.pi/npoints
