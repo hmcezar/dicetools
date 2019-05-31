@@ -56,7 +56,6 @@ def equal_parameters(dihedrals, mol):
   return equals
 
 def torsen_opls(phi, V1, V2, V3, f1, f2, f3):
-  print(phi, V1, V2, V3, f1, f2, f3)
   return 0.5 * (V1*(1.+cos(phi+f1)) + V2*(1.-cos(2.*phi+f2)) + V3*(1.+cos(3.*phi+f3)))
 
 def torsen_amber(phi, V1, V2, V3, f1, f2, f3):
@@ -67,16 +66,18 @@ def fit_func(phi, *args):
   nfunc = int(len(args)/6)
   sumf = 0.
   for i in range(nfunc):
-    print(*args[6*i:6*(i+1)])
-    print(torsen_opls(phi,*args[6*i:6*(i+1)]))
     sumf += torsen_opls(phi,*args[6*i:6*(i+1)])
   return sumf
 
 def fit_func2(phi, *args):
+  # first half are fs
+
+  # second half are vs
+  
   nfunc = int(len(args)/6)
   sumf = 0.
   for i in range(nfunc):
-    sumf += torsen_opls(phi,*args[6*i:6*(i+1)])
+    sumf += torsen_opls(phi,*vs[6*i:6*(i+1)],*fs)
   return sumf
 
 
@@ -127,27 +128,29 @@ if __name__ == '__main__':
   diedClass, nben = (list(t) for t in zip(*sorted(zip(diedClass, nben))))
 
   # shift the energies to the same reference
-  min_mq = min(enqm)
-  enqm = [x-min_mq for x in enqm]
-  min_class = nben[np.argmin(enqm)] # set as zero the same angle used before for QM
-  nben = [x-min_class for x in nben]
+  # min_mq = min(enqm)
+  # enqm = [x-min_mq for x in enqm]
+  # min_class = nben[np.argmin(enqm)] # set as zero the same angle used before for QM
+  # nben = [x-min_class for x in nben]
 
   # fit!
-  params = []
+  v0s = []
+  f0s = []
   for i, dih in enumerate(dihedralsDict):
-    params += dihedralsDict[dih][4:7]
-    params += [dihAngles[i]+dihedralsDict[dih][7], 2.*dihAngles[i]+dihedralsDict[dih][8], 3.*dihAngles[i]+dihedralsDict[dih][9]]
+    v0s += dihedralsDict[dih][4:7]
+    f0s += [dihAngles[i]+dihedralsDict[dih][7], 2.*dihAngles[i]+dihedralsDict[dih][8], 3.*dihAngles[i]+dihedralsDict[dih][9]]
 
-  print(dihedralsDict)
-  print(params)
-
-  print(fit_func(0.2,*params))
+  print(v0s)
+  print(f0s)
 
   enqm = np.asarray(enqm)
   nben = np.asarray(nben)
 
   enfit = enqm - nben
+  min_en = min(enfit)
+  enfit = [x-min_en for x in enfit]
 
+  # how to use just a few params https://stackoverflow.com/a/12208940
   popt, pcov = curve_fit(fit_func, died, enfit, p0=params)
   print(len(popt))
   print('Fitted values:', *popt)
