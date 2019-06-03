@@ -34,6 +34,10 @@ if __name__ == '__main__':
 
   died, ener = parse_en_log_gaussian(args.logfile)
 
+  # print to screen
+  for ang, en in zip(died,ener):
+    print("%f\t%f" % (ang, en))
+
   # plot it
   mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
 
