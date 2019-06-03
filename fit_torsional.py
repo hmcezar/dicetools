@@ -63,21 +63,14 @@ def torsen_amber(phi, V1, V2, V3, f1, f2, f3):
 
 # thanks to https://stackoverflow.com/a/34226673
 def fit_func(phi, *args):
+  # first half are vs
+  vs = args[:int(len(args)/2)]
+  # second half are fs
+  fs = args[int(len(args)/2):]
   nfunc = int(len(args)/6)
   sumf = 0.
   for i in range(nfunc):
-    sumf += torsen_opls(phi,*args[6*i:6*(i+1)])
-  return sumf
-
-def fit_func2(phi, *args):
-  # first half are fs
-
-  # second half are vs
-  
-  nfunc = int(len(args)/6)
-  sumf = 0.
-  for i in range(nfunc):
-    sumf += torsen_opls(phi,*vs[6*i:6*(i+1)],*fs)
+    sumf += torsen_opls(phi,*vs[3*i:3*(i+1)],*fs[3*i:3*(i+1)])
   return sumf
 
 
@@ -99,6 +92,7 @@ if __name__ == '__main__':
   parser.add_argument("a3", type=int, help="third atom defining the reference dihedral")
   parser.add_argument("a4", type=int, help="fourth atom defining the reference dihedral")
   parser.add_argument("--amber", help="use AMBER rule to 1-4 interactions and torsional energy", action="store_true")
+  parser.add_argument("--bound-values", type=float, help="upper and lower bound [-val,+val] for the fitted parameters (default = 5)", default=5.)
   args = parser.parse_args()
 
   # parse data from the log file
@@ -127,39 +121,33 @@ if __name__ == '__main__':
   diedClass = [shift_angle_rad(x) for x in diedClass]
   diedClass, nben = (list(t) for t in zip(*sorted(zip(diedClass, nben))))
 
-  # shift the energies to the same reference
-  # min_mq = min(enqm)
-  # enqm = [x-min_mq for x in enqm]
-  # min_class = nben[np.argmin(enqm)] # set as zero the same angle used before for QM
-  # nben = [x-min_class for x in nben]
-
-  # fit!
+  # prepare the data and fit
   v0s = []
   f0s = []
   for i, dih in enumerate(dihedralsDict):
     v0s += dihedralsDict[dih][4:7]
-    f0s += [dihAngles[i]+dihedralsDict[dih][7], 2.*dihAngles[i]+dihedralsDict[dih][8], 3.*dihAngles[i]+dihedralsDict[dih][9]]
+    f0s += [dihAngles[i], 2.*dihAngles[i], 3.*dihAngles[i]]
 
-  print(v0s)
-  print(f0s)
+  # set the bounds
+  lbound = len(v0s)*[-args.bound_values]
+  ubound = len(v0s)*[args.bound_values]
 
   enqm = np.asarray(enqm)
   nben = np.asarray(nben)
 
   enfit = enqm - nben
-  min_en = min(enfit)
-  enfit = [x-min_en for x in enfit]
+  enfit = enfit-min(enfit)
 
   # how to use just a few params https://stackoverflow.com/a/12208940
-  popt, pcov = curve_fit(fit_func, died, enfit, p0=params)
-  print(len(popt))
+  popt, pcov = curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound))
   print('Fitted values:', *popt)
 
+  # plot the curves to compare
   fcurv = []
   for val in died:
-    fcurv.append(fit_func(val,*popt))
+    fcurv.append(fit_func(val,*popt,*f0s))
 
-  plt.plot(died, enfit)
-  # plt.plot(diedClass, nben)
-  plt.plot(died, fcurv, 'r-', label='fit')
+  plt.plot(died, enfit, label='Gaussian')
+  plt.plot(died, fcurv, color='tab:red', label='Fit')
+  plt.legend()
   plt.show()
