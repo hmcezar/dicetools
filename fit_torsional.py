@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import openbabel
 import pybel
 from numpy import cos
+from math import ceil
 from scipy.optimize import curve_fit
 from plot_en_angle_gaussian_scan import parse_en_log_gaussian
 from plot_eff_tors import *
@@ -130,6 +131,7 @@ if __name__ == '__main__':
   parser.add_argument("a4", type=int, help="fourth atom defining the reference dihedral")
   parser.add_argument("--amber", help="use AMBER rule to 1-4 interactions and torsional energy", action="store_true")
   parser.add_argument("--bound-values", type=float, help="upper and lower bound [-val,+val] for the fitted parameters (default = 5)", default=5.)
+  parser.add_argument("--cut-energy", type=float, help="the percentage of highest energies that should not be considered during the fit (default = 0.2)", default=0.2)
   args = parser.parse_args()
 
   # parse data from the log file
@@ -156,7 +158,6 @@ if __name__ == '__main__':
     acoords = [atomsCoord[x] for x in dihedralsDict[tors][:4]]
     dihAngles.append(get_phi(*acoords)-ref_ang)
 
-
   # get the classical curve with current parameters
   diedClass, _, nben, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, len(died), "", False, args.amber, False, False)
   # convert the angles and sort
@@ -170,8 +171,6 @@ if __name__ == '__main__':
     v0s += dihedralsDict[dih][4:7]
     f0s += [dihAngles[i], 2.*dihAngles[i], 3.*dihAngles[i]]
 
-  # print([180.0*x/np.pi for x in f0s])
-
   # set the bounds
   lbound = len(v0s)*[-args.bound_values]
   ubound = len(v0s)*[args.bound_values]
@@ -181,14 +180,21 @@ if __name__ == '__main__':
   enqm = [x-min_mq for x in enqm]
   min_class = nben[np.argmin(enqm)] # set as zero the same angle used before for QM
   nben = [x-min_class for x in nben]
-
+  died = np.asarray(died)
   enqm = np.asarray(enqm)
   nben = np.asarray(nben)
 
-  # enqm = enqm - min(enqm)
-  # nben = nben - min(nben)
-
+  # subtract the nonbonded energy to get the "QM torsional"
   enfit = enqm - nben
+
+  # order and remove the points relative to the transition states
+  npremove = ceil(args.cut_energy*len(died))
+  lowenremove = -np.sort(-enfit)[npremove-1]
+  filtbar = np.where(enfit >= lowenremove)
+
+  olddied = died
+  died = np.delete(died, filtbar)
+  enfit = np.delete(enfit, filtbar)
 
   # how to use just a few params https://stackoverflow.com/a/12208940
   popt, pcov = curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound))
@@ -198,18 +204,16 @@ if __name__ == '__main__':
 
   # plot the curves to compare
   fcurv = []
-  for val in died:
+  for val in olddied:
     fcurv.append(fit_func(val,*popt,*f0s))
 
   # write the adjusted dfr
   write_dfr(args.dfrfile, dihedralsDict, popt, args.amber)
 
-  plt.plot(died, enqm, label='Gaussian total energy')
-  plt.plot(died, fcurv+nben, label='Classical total energy')
-  plt.plot(died, nben, label='Classical nonbonded energy')
+  plt.plot(olddied, enqm, label='Gaussian total energy')
+  plt.plot(olddied, nben, label='Classical nonbonded energy')
   plt.plot(died, enfit, label='Gaussian torsional energy')
-  plt.plot(died, fcurv, label='Fit')
-  # plt.plot(died, enfit, color='tab:green', label='Gaussian torsional energy')
-  # plt.plot(died, fcurv, color='tab:red', label='Fit')
+  plt.plot(olddied, fcurv, label='Fit')
+  plt.plot(olddied, fcurv+nben, label='Classical total energy')
   plt.legend()
   plt.show()
