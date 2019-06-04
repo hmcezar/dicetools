@@ -63,6 +63,9 @@ Receives a trajectory and two integer (atom indexes) to plot the evolution of a 
 ### estimate_variance_timeseries.py
 Receives a file containing a series of numbers, one in each line (usually the output of calculate_dihedrals.py), classifies all the values as belonging to a group in [min,max] or [min2,max2] or not and then estimate the variance, or how much the populations deviate from the others inside each one of the "nwindows" (integer parameter).
 
+### fit_torsional.py
+Receives a Gaussian's .log contaning calculations concerning the rotation around a rotatable bond (generated with plot_eff_tors), the .txt with the correct charges and LJ parameters and an incomplete .dfr (with bad parameters for the description of the torsions around the rotatable bond) to fit the torsional energy and generate a new .dfr. The script uses some chemical knowledge to attribute the same parameters for the same torsions. By default, the fit enforces the parametrization to pass through the minimums. There are a few options concerning the fit and the verbosity of the output.
+
 ### fragGen.py
 The fragGen is an script used to generate the input for CBMC simulations with DICE. It receives a file containing the geometry for a molecule in any format supported by OpenBabel to generate the .dfr and .txt files. 
 fragGen always generates the maximum fragmentation of the molecule, breaking the molecule into the rotatable bonds.
