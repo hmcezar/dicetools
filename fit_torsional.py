@@ -123,7 +123,18 @@ def write_dfr(dfrfile, dihedrals, params, amber):
 
 def find_nearest_idx(array, value):
     array = np.asarray(array)
-    return (np.abs(array - value)).argmin()
+    closest = (np.abs(array - value)).argmin()
+    # check if neighbor is smaller
+    if (closest != 0 and closest != len(array)-1):
+      if array[closest] > array[closest-1]:
+        idx = closest-1
+      elif array[closest] > array[closest+1]:
+        idx = closest+1
+      else:
+        idx = closest
+    else:
+      idx = closest
+    return idx
 
 
 if __name__ == '__main__':
@@ -137,8 +148,9 @@ if __name__ == '__main__':
   parser.add_argument("a4", type=int, help="fourth atom defining the reference dihedral")
   parser.add_argument("--amber", help="use AMBER rule to 1-4 interactions and torsional energy", action="store_true")
   parser.add_argument("--no-force-min", help="disable the bigger weight given to the minimum points by default", action="store_true")
+  parser.add_argument("--plot-minimums", help="plot the interpolated curve and the minimums that were found", action="store_true")
   parser.add_argument("--bound-values", type=float, help="upper and lower bound [-val,+val] for the fitted parameters (default = 5)", default=5.)
-  parser.add_argument("--cut-energy", type=float, help="the percentage of highest energies that should not be considered during the fit (default = 0.2)", default=0.2)
+  parser.add_argument("--cut-energy", type=float, help="the percentage of highest energies that should not be considered during the fit (default = 0.3)", default=0.3)
   args = parser.parse_args()
 
   # parse data from the log file
@@ -171,7 +183,10 @@ if __name__ == '__main__':
   diedClass = [shift_angle_rad(x) for x in diedClass]
   diedClass, nben = (list(t) for t in zip(*sorted(zip(diedClass, nben))))
 
-  # prepare the data and fit
+  # plotting options
+  mpl.rcParams.update({'font.size':12, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+
+  # prepare the data
   v0s = []
   f0s = []
   for i, dih in enumerate(dihedralsDict):
@@ -194,11 +209,30 @@ if __name__ == '__main__':
   # subtract the nonbonded energy to get the "QM torsional"
   enfit = enqm - nben
 
-  # Get the minimums of the enfit curve
-  f = CubicSpline(np.insert(died, 0, -died[len(died)-1]), np.insert(enfit, 0, -enfit[len(enfit)-1]), bc_type='periodic')
+  # Get the minimums of the enqm curve
+  # set the initial and final points to have the same (lowest) energy
+  if enqm[len(enqm)-1] < enqm[0]:
+    died_spline = np.insert(died, 0, -died[len(died)-1])
+    en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
+  else:
+    died_spline = np.append(died, -died[0])
+    en_spline = np.append(enqm, enqm[0])
+
+  f = CubicSpline(died_spline, en_spline, bc_type='periodic')
   cr_pts = f.derivative().roots()
   deriv2 = f.derivative(2)
   cr_pts = np.delete(cr_pts, np.where(deriv2(cr_pts) < 0.))
+
+  # plot the spline and minimums
+  if args.plot_minimums:
+    xc = np.arange(-3.142,3.142, 0.02)
+    plt.plot(xc, f(xc), label='Cubic spline')
+    plt.plot(cr_pts, f(cr_pts), 'go', label="Minima")
+    plt.legend()
+    plt.xlabel(r"$\phi$ (radians)")
+    plt.ylabel(r"$E$ (kcal/mol)")
+    plt.xlim([-3.142,3.142])
+    plt.show()
 
   # order and remove the points relative to the transition states
   npremove = ceil(args.cut_energy*len(died))
@@ -237,4 +271,6 @@ if __name__ == '__main__':
   plt.plot(olddied, fcurv, label='Fit')
   plt.plot(olddied, fcurv+nben, label='Classical total energy')
   plt.legend()
+  plt.xlabel(r"$\phi$ (radians)")
+  plt.ylabel(r"$E$ (kcal/mol)")
   plt.show()
