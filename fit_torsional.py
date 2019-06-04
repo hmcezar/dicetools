@@ -35,12 +35,18 @@ def species_coord_to_openbabel(species, coord):
   return mol
 
 
-def equal_parameters(dihedrals, mol):
+def equal_parameters(dihedrals, mol, tolerance, usevalence):
   infoAtom = []
+  dihAngles = []
   for dih in dihedrals:
+    acoords = [[mol.GetAtomById(x-1).GetX(),mol.GetAtomById(x-1).GetY(),mol.GetAtomById(x-1).GetZ()] for x in dih]
+    dihAngles.append(get_phi(*acoords))
     a1 = mol.GetAtomById(dih[0]-1)
     a4 = mol.GetAtomById(dih[3]-1)
-    infoAtom.append([a1.GetAtomicNum(), a1.GetValence(), a1.GetHyb(), a4.GetAtomicNum(), a4.GetValence(), a4.GetHyb()])
+    if usevalence:
+      infoAtom.append([a1.GetAtomicNum(), a1.GetValence(), a1.GetHyb(), a4.GetAtomicNum(), a4.GetValence(), a4.GetHyb()])
+    else:
+      infoAtom.append([a1.GetAtomicNum(), a1.GetHyb(), a4.GetAtomicNum(), a4.GetHyb()])
 
   equals = []
   for i, pair1 in enumerate(infoAtom):
@@ -48,15 +54,20 @@ def equal_parameters(dihedrals, mol):
     for j, pair2 in enumerate(infoAtom):
       if j <= i: continue
 
-      pair3 = pair2[3:]+pair2[:3]
+      pair3 = pair2[int(len(pair2)/2):]+pair2[:int(len(pair2)/2)]
 
       if (pair1 == pair2) or (pair1 == pair3):
         equals.append([i,j])
 
-  # print(infoAtom)    
-  # print(equals)
+  # compare angles to check if dihedrals are really equal
+  clean_pairs = []
+  for pair in equals:
+    ang1 = abs(round(dihAngles[pair[0]],4))
+    ang2 = abs(round(dihAngles[pair[1]],4))
+    if abs(ang1-ang2) <= tolerance:
+      clean_pairs.append(pair)
 
-  return equals
+  return clean_pairs
 
 
 def torsen_opls(phi, V1, V2, V3, f1, f2, f3):
@@ -77,6 +88,28 @@ def fit_func(phi, *args):
   sumf = 0.
   for i in range(nfunc):
     sumf += torsen_opls(phi,*vs[3*i:3*(i+1)],*fs[3*i:3*(i+1)])
+  return sumf
+
+
+def fit_func_equals(phi, nequal, *args):
+  # first half are vs
+  vs = args[:int((len(args)-nequal+1)/2)]
+  # second half are fs
+  fs = args[int((len(args)-nequal+1)/2):len(args)-nequal+1]
+  # identification of equal parameters
+  equal = args[len(args)-nequal+1:][0]
+
+  nfunc = int(len(vs)/3)
+  sumf = 0.
+  for i in range(nfunc):
+    calc = False
+    for pair in equal:
+      if i == pair[1]:
+        sumf += torsen_opls(phi,*vs[3*pair[0]:3*(pair[0]+1)],*fs[3*i:3*(i+1)])
+        calc = True
+    if not calc:
+      sumf += torsen_opls(phi,*vs[3*i:3*(i+1)],*fs[3*i:3*(i+1)])
+
   return sumf
 
 
@@ -149,6 +182,8 @@ if __name__ == '__main__':
   parser.add_argument("--amber", help="use AMBER rule to 1-4 interactions and torsional energy", action="store_true")
   parser.add_argument("--no-force-min", help="disable the bigger weight given to the minimum points by default", action="store_true")
   parser.add_argument("--plot-minimums", help="plot the interpolated curve and the minimums that were found", action="store_true")
+  parser.add_argument("--use-valence", help="also use valence of the atoms when finding similar dihedrals", action="store_true")
+  parser.add_argument("--tolerance-dihedral", type=float, help="tolarance value for which dihedral angles are considered to be equal (default = 0.1 radians)", default=0.1)
   parser.add_argument("--bound-values", type=float, help="upper and lower bound [-val,+val] for the fitted parameters (default = 5)", default=5.)
   parser.add_argument("--cut-energy", type=float, help="the percentage of highest energies that should not be considered during the fit (default = 0.3)", default=0.3)
   args = parser.parse_args()
@@ -165,7 +200,7 @@ if __name__ == '__main__':
   mol = species_coord_to_openbabel(atomSp, atomsCoord)
 
   # get dihedrals which should have the same parameters
-  equals = equal_parameters([dihedralsDict[x][:4] for x in dihedralsDict], mol)
+  equals = equal_parameters([dihedralsDict[x][:4] for x in dihedralsDict], mol, args.tolerance_dihedral, args.use_valence)
 
   # get reference angle
   acoords = [atomsCoord[x] for x in [args.a1, args.a2, args.a3, args.a4]]
@@ -211,12 +246,22 @@ if __name__ == '__main__':
 
   # Get the minimums of the enqm curve
   # set the initial and final points to have the same (lowest) energy
-  if enqm[len(enqm)-1] < enqm[0]:
-    died_spline = np.insert(died, 0, -died[len(died)-1])
-    en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
+  # if maximum
+  if enqm[len(enqm)-1]-enqm[len(enqm)-2] > 0:
+    if enqm[len(enqm)-1] > enqm[0]:
+      died_spline = np.insert(died, 0, -died[len(died)-1])
+      en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
+    else:
+      died_spline = np.append(died, -died[0])
+      en_spline = np.append(enqm, enqm[0])
+  # if minimum
   else:
-    died_spline = np.append(died, -died[0])
-    en_spline = np.append(enqm, enqm[0])
+    if enqm[len(enqm)-1] < enqm[0]:
+      died_spline = np.insert(died, 0, -died[len(died)-1])
+      en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
+    else:
+      died_spline = np.append(died, -died[0])
+      en_spline = np.append(enqm, enqm[0])
 
   f = CubicSpline(died_spline, en_spline, bc_type='periodic')
   cr_pts = f.derivative().roots()
@@ -227,7 +272,7 @@ if __name__ == '__main__':
   if args.plot_minimums:
     xc = np.arange(-3.142,3.142, 0.02)
     plt.plot(xc, f(xc), label='Cubic spline')
-    plt.plot(cr_pts, f(cr_pts), 'go', label="Minima")
+    plt.plot(cr_pts, f(cr_pts), 'o', label="Minima")
     plt.legend()
     plt.xlabel(r"$\phi$ (radians)")
     plt.ylabel(r"$E$ (kcal/mol)")
@@ -252,10 +297,24 @@ if __name__ == '__main__':
     weights[idx_min] = 0.1
 
   # how to use just a few params https://stackoverflow.com/a/12208940
-  popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
-  # print('Fitted values:', *popt)
+  if equals:
+    popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+  else:
+    popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
 
-  popt = [round(x,3) for x in popt]
+  if equals:
+    new_popt = []
+    for tors in range(int(len(popt)/3)):
+      fnd = False
+      for pair in equals:
+        if tors == pair[1]:
+          new_popt += [round(x,3) for x in popt[pair[0]*3:3*(pair[0]+1)]]
+          fnd = True
+      if not fnd:
+        new_popt += [round(x,3) for x in popt[tors*3:3*(tors+1)]]
+    popt = np.asarray(new_popt)
+  else:
+    popt = [round(x,3) for x in popt]
 
   # plot the curves to compare
   fcurv = []
