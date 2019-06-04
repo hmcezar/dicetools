@@ -14,7 +14,8 @@ import openbabel
 import pybel
 from numpy import cos
 from math import ceil
-from scipy.optimize import curve_fit
+from scipy import optimize
+from scipy.interpolate import InterpolatedUnivariateSpline
 from plot_en_angle_gaussian_scan import parse_en_log_gaussian
 from plot_eff_tors import *
 
@@ -187,6 +188,22 @@ if __name__ == '__main__':
   # subtract the nonbonded energy to get the "QM torsional"
   enfit = enqm - nben
 
+  # Get the minimums of the enfit curve
+  f = InterpolatedUnivariateSpline(np.insert(died, 0, -died[len(died)-1]), np.insert(enfit, 0, -enfit[len(enfit)-1]), k=4)
+
+  cr_pts = f.derivative().roots()
+  # cr_pts = np.append(cr_pts, (died[0], died[-1]))  # also check the endpoints of the interval
+  cr_vals = f(cr_pts)
+  print(cr_pts,cr_vals)
+
+  xc = np.arange(-3.142,3.142, 0.02)
+  yc = f(xc)
+  plt.xlim([-3.142,3.142])
+
+  plt.plot(xc, yc)
+  plt.plot(cr_pts, cr_vals, 'go', label="Minima")
+  
+  plt.show()
   # order and remove the points relative to the transition states
   npremove = ceil(args.cut_energy*len(died))
   lowenremove = -np.sort(-enfit)[npremove-1]
@@ -197,7 +214,7 @@ if __name__ == '__main__':
   enfit = np.delete(enfit, filtbar)
 
   # how to use just a few params https://stackoverflow.com/a/12208940
-  popt, pcov = curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound))
+  popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound))
   # print('Fitted values:', *popt)
 
   popt = [round(x,3) for x in popt]
