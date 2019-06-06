@@ -182,6 +182,7 @@ if __name__ == '__main__':
   parser.add_argument("--amber", help="use AMBER rule to 1-4 interactions and torsional energy", action="store_true")
   parser.add_argument("--no-force-min", help="disable the bigger weight given to the minimum points by default", action="store_true")
   parser.add_argument("--plot-minimums", help="plot the interpolated curve and the minimums that were found", action="store_true")
+  parser.add_argument("--fit-to-spline", help="use the cubic spline curve for the fit instead of just the few points", action="store_true")
   parser.add_argument("--use-valence", help="also use valence of the atoms when finding similar dihedrals", action="store_true")
   parser.add_argument("--tolerance-dihedral", type=float, help="tolarance value for which dihedral angles are considered to be equal (default = 0.1 radians)", default=0.1)
   parser.add_argument("--bound-values", type=float, help="upper and lower bound [-val,+val] for the fitted parameters (default = 5)", default=5.)
@@ -246,31 +247,66 @@ if __name__ == '__main__':
 
   # Get the minimums of the enqm curve
   # set the initial and final points to have the same (lowest) energy
-  # if maximum
-  if enqm[len(enqm)-1]-enqm[len(enqm)-2] > 0:
-    if enqm[len(enqm)-1] > enqm[0]:
-      died_spline = np.insert(died, 0, -died[len(died)-1])
-      en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
+  if enqm[len(enqm)-1] != enqm[0]:
+    # if maximum
+    if enqm[len(enqm)-1]-enqm[len(enqm)-2] > 0:
+      if enqm[len(enqm)-1] > enqm[0]:
+        died_spline = np.insert(died, 0, -died[len(died)-1])
+        en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
+      else:
+        died_spline = np.append(died, -died[0])
+        en_spline = np.append(enqm, enqm[0])
+    # if minimum
     else:
-      died_spline = np.append(died, -died[0])
-      en_spline = np.append(enqm, enqm[0])
-  # if minimum
+      if enqm[len(enqm)-1] < enqm[0]:
+        died_spline = np.insert(died, 0, -died[len(died)-1])
+        en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
+      else:
+        died_spline = np.append(died, -died[0])
+        en_spline = np.append(enqm, enqm[0])
   else:
-    if enqm[len(enqm)-1] < enqm[0]:
-      died_spline = np.insert(died, 0, -died[len(died)-1])
-      en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
+    died_spline = died
+    en_spline = enqm
+
+  # set the boundaries for enfit too
+  died_enfit_spline = died
+  if enfit[len(enfit)-1] != enfit[0]:
+    if abs(died[0]) != abs(died[len(died)-1]):
+      # if maximum
+      if enfit[len(enfit)-1]-enfit[len(enfit)-2] > 0:
+        if enfit[len(enfit)-1] > enfit[0]:
+          died_enfit_spline = np.insert(died, 0, -died[len(died)-1])
+          enfit_spline = np.insert(enfit, 0, enfit[len(enfit)-1])
+        else:
+          died_enfit_spline = np.append(died, -died[0])
+          enfit_spline = np.append(enfit, enfit[0])
+      # if minimum
+      else:
+        if enfit[len(enfit)-1] < enfit[0]:
+          died_enfit_spline = np.insert(died, 0, -died[len(died)-1])
+          enfit_spline = np.insert(enfit, 0, enfit[len(enfit)-1])
+        else:
+          died_enfit_spline = np.append(died, -died[0])
+          enfit_spline = np.append(enfit, enfit[0])
     else:
-      died_spline = np.append(died, -died[0])
-      en_spline = np.append(enqm, enqm[0])
+      print("entrei")
+      extremes = [enfit[0], enfit[len(enfit)-1]]
+      enfit_spline = enfit
+      enfit_spline[0] = min(extremes)
+      enfit_spline[len(enfit_spline)-1] = min(extremes)
+  else:
+    enfit_spline = enfit
+
 
   f = CubicSpline(died_spline, en_spline, bc_type='periodic')
+  ffit = CubicSpline(died_enfit_spline, enfit_spline, bc_type='periodic')
   cr_pts = f.derivative().roots()
   deriv2 = f.derivative(2)
   cr_pts = np.delete(cr_pts, np.where(deriv2(cr_pts) < 0.))
+  xc = np.arange(-3.142,3.142, 0.02)
 
   # plot the spline and minimums
   if args.plot_minimums:
-    xc = np.arange(-3.142,3.142, 0.02)
     plt.plot(xc, f(xc), label='Cubic spline')
     plt.plot(cr_pts, f(cr_pts), 'o', label="Minima")
     plt.legend()
@@ -288,19 +324,33 @@ if __name__ == '__main__':
   died = np.delete(died, filtbar)
   enfit = np.delete(enfit, filtbar)
 
-  # give greater weight to minimums (smaller sigma is a grater weight)
-  weights = np.ones(len(died))
-  if not args.no_force_min:
-    idx_min = []
-    for val in cr_pts:
-      idx_min.append(find_nearest_idx(died,val))
-    weights[idx_min] = 0.1
+  if not args.fit_to_spline:
+    # give greater weight to minimums (smaller sigma is a grater weight)
+    weights = np.ones(len(died))
+    if not args.no_force_min:
+      idx_min = []
+      for val in cr_pts:
+        idx_min.append(find_nearest_idx(died,val))
+      weights[idx_min] = 0.1
 
-  # how to use just a few params https://stackoverflow.com/a/12208940
-  if equals:
-    popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+    if equals:
+      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+    else:
+      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
   else:
-    popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+    # give greater weight to minimums (smaller sigma is a grater weight)
+    weights = np.ones(len(xc))
+    if not args.no_force_min:
+      idx_min = []
+      for val in cr_pts:
+        idx_min.append(find_nearest_idx(died,val))
+      weights[idx_min] = 0.1
+
+    if equals:
+      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), xc, ffit(xc), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+    else:
+      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), xc, ffit(xc), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+
 
   if equals:
     new_popt = []
