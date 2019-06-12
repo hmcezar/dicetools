@@ -218,21 +218,19 @@ if __name__ == '__main__':
     acoords = [atomsCoord[x] for x in dihedralsDict[tors][:4]]
     dihAngles.append(get_phi(*acoords)-ref_ang)
 
-  # points for which the spline are calculated
-  xc = np.arange(-np.pi,np.pi, 0.02)
-
   # get the classical curve with current parameters
   diedClass, _, nben, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, died, "", False, args.amber, False, False)
   # convert the angles and sort
   diedClass = [shift_angle_rad(x) for x in diedClass]
   diedClass, nben = (list(t) for t in zip(*sorted(zip(diedClass, nben))))
 
+  # points for which the spline are calculated
+  xc = np.arange(-np.pi,np.pi, 0.02)
+  
   diedClass_fit, _, nben_fit, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, xc, "", False, args.amber, False, False)
   # convert the angles and sort
   diedClass_fit = [shift_angle_rad(x) for x in diedClass_fit]
   diedClass_fit, nben_fit = (list(t) for t in zip(*sorted(zip(diedClass_fit, nben_fit))))
-
-  xc = diedClass_fit.copy()
 
   # plotting options
   mpl.rcParams.update({'font.size':12, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
@@ -422,12 +420,6 @@ if __name__ == '__main__':
   # write the adjusted dfr
   write_dfr(args.dfrfile, dihedralsDict, popt, args.amber)
 
-  print(enqm)
-  print(fcurv)
-  print(nben_fit)
-  print(oldenfit)
-  print(nben)
-
   if args.plot_nben:
     plt.plot(xc, nben_fit, label='Classical nonbonded energy')
   if args.fit_to_spline:
@@ -436,7 +428,7 @@ if __name__ == '__main__':
     plt.plot(died, enfit, label="Gaussian torsional (fit target)")
   plt.plot(xc, fcurv, label='Fit')
   plt.plot(olddied, oldenfit+nben, label='Gaussian total energy')
-  plt.plot(xc, f(xc), label='Gaussian total energy spline')
+  # plt.plot(xc, f(xc), label='Gaussian total energy spline')
   plt.plot(xc, fcurv+nben_fit, label='Classical total energy')
   plt.plot(cr_pts, f(cr_pts), 'o', color='tab:green', label="Target minimums")
   plt.legend()
