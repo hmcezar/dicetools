@@ -61,9 +61,9 @@ def rotate_point(atom, pt1, pt2, dphi):
   sqrnorm = norm*norm
   dotprod = np.dot(v,a)
 
-  x = ((p1[0]*(v[1]*v[1]+v[2]*v[2])-v[0]*(p1[1]*v[1]+p1[2]*v[2]-dotprod))*(1.0-cos(dphi))+sqrnorm*a[0]*cos(dphi)+norm*(-p1[2]*v[1]+p1[1]*v[2]-v[2]*a[1]+v[1]*a[2])*sin(dphi))/sqrnorm
-  y = ((p1[1]*(v[0]*v[0]+v[2]*v[2])-v[1]*(p1[0]*v[0]+p1[2]*v[2]-dotprod))*(1.0-cos(dphi))+sqrnorm*a[1]*cos(dphi)+norm*(p1[2]*v[0]-p1[0]*v[2]+v[2]*a[0]-v[0]*a[2])*sin(dphi))/sqrnorm
-  z = ((p1[2]*(v[0]*v[0]+v[1]*v[1])-v[2]*(p1[0]*v[0]+p1[1]*v[1]-dotprod))*(1.0-cos(dphi))+sqrnorm*a[2]*cos(dphi)+norm*(-p1[1]*v[0]+p1[0]*v[1]-v[1]*a[0]+v[0]*a[1])*sin(dphi))/sqrnorm
+  x = ((p1[0]*(v[1]*v[1]+v[2]*v[2])-v[0]*(p1[1]*v[1]+p1[2]*v[2]-dotprod))*(1.-cos(dphi))+sqrnorm*a[0]*cos(dphi)+norm*(-p1[2]*v[1]+p1[1]*v[2]-v[2]*a[1]+v[1]*a[2])*sin(dphi))/sqrnorm
+  y = ((p1[1]*(v[0]*v[0]+v[2]*v[2])-v[1]*(p1[0]*v[0]+p1[2]*v[2]-dotprod))*(1.-cos(dphi))+sqrnorm*a[1]*cos(dphi)+norm*(p1[2]*v[0]-p1[0]*v[2]+v[2]*a[0]-v[0]*a[2])*sin(dphi))/sqrnorm
+  z = ((p1[2]*(v[0]*v[0]+v[1]*v[1])-v[2]*(p1[0]*v[0]+p1[1]*v[1]-dotprod))*(1.-cos(dphi))+sqrnorm*a[2]*cos(dphi)+norm*(-p1[1]*v[0]+p1[0]*v[1]-v[1]*a[0]+v[0]*a[1])*sin(dphi))/sqrnorm
 
   return [x,y,z]
 
@@ -82,10 +82,10 @@ def get_phi(a1, a2, a3, a4):
   return np.arctan2((np.dot(n,rij)*normrjk)/(normm*normn),np.dot(m,n)/(normm*normn))
 
 def energy_tors_amber(params, phi):
-  return 0.5*(params[0]*(1.0 + cos(phi-params[3])) + params[1]*(1.0 + cos(2.0*phi-params[4])) + params[2]*(1.0 + cos(3.0*phi-params[5])))
+  return 0.5*(params[0]*(1. + cos(phi-params[3])) + params[1]*(1. + cos(2.*phi-params[4])) + params[2]*(1. + cos(3.*phi-params[5])))
 
 def energy_tors(params, phi):
-  return 0.5*(params[0]*(1.0 + cos(phi+params[3])) + params[1]*(1.0 - cos(2.0*phi+params[4])) + params[2]*(1.0 + cos(3.0*phi+params[5])))
+  return 0.5*(params[0]*(1. + cos(phi+params[3])) + params[1]*(1. - cos(2.*phi+params[4])) + params[2]*(1. + cos(3.*phi+params[5])))
 
 def energy_nonbonded(sigma,epsilon,q1,q2,fclb,flj,r):
   sigr = sigma/r
@@ -95,10 +95,10 @@ def energy_nonbonded(sigma,epsilon,q1,q2,fclb,flj,r):
 
 def calculate_dipole(atomSp, atomsCoord, atomsNB):
   # put in the center of mass
-  xcm = 0.0
-  ycm = 0.0
-  zcm = 0.0
-  tmas = 0.0
+  xcm = 0.
+  ycm = 0.
+  zcm = 0.
+  tmas = 0.
   for i, atomr in atomsCoord.items():
     mass = atomicmass[int(atomSp[i])]
     tmas += mass
@@ -360,14 +360,14 @@ def parse_dfr(dfrfile, ab2, ab3):
     line = f.readline()
     while (line.strip().lower() != "$end dihedral"):
       if (int(line.split()[1]) == ab2 and int(line.split()[2]) == ab3) or (int(line.split()[1]) == ab3 and int(line.split()[2]) == ab2):
-        potentialDict[dnum] = [int(line.split()[0]),int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),float(line.split()[5]),float(line.split()[6]),float(line.split()[7]),float(line.split()[8])*np.pi/180.0,float(line.split()[9])*np.pi/180.0,float(line.split()[10])*np.pi/180.0]
+        potentialDict[dnum] = [int(line.split()[0]),int(line.split()[1]),int(line.split()[2]),int(line.split()[3]),float(line.split()[5]),float(line.split()[6]),float(line.split()[7]),float(line.split()[8])*np.pi/180.,float(line.split()[9])*np.pi/180.,float(line.split()[10])*np.pi/180.]
       dnum += 1
       line = f.readline()
 
   return potentialDict, connInfo, fragInfo, fconnInfo
 
 
-def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, printxyz, useamber, gausstop, gaussbot):
+def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, points, base, printxyz, useamber, gausstop, gaussbot):
 
   # put gausstop file contents into a string
   if gausstop:
@@ -399,7 +399,7 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
   # based on the fragments, atomic connections and reference dihedral find the two rigid parts to be moved
   fpt1, fpt2 = find_rigid_parts(fragInfo, fconnInfo, ab1, ab2, ab3, ab4)
 
-  # get the nonbonded factors (0.0, 0.5 or 1.0), which interactions will be evaluated and adjust the constants
+  # get the nonbonded factors (0., 0.5 or 1.0), which interactions will be evaluated and adjust the constants
   fclb, flj = get_fnb(connInfo, natoms, useamber)
 
   # the nonzero terms are the ones which we will use to calculate an interaction
@@ -412,11 +412,11 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
 
   for atom in nbParams.keys():
     nbParams[atom][0] = nbParams[atom][0] * CT_e
-    nbParams[atom][1] = sqrt(nbParams[atom][1]) * 2.0
+    nbParams[atom][1] = sqrt(nbParams[atom][1]) * 2.
     if (mult):
       nbParams[atom][2] = sqrt(nbParams[atom][2])
     else:
-      nbParams[atom][2] = nbParams[atom][2]/2.0
+      nbParams[atom][2] = nbarams[atom][2]/2.
 
   # get the common bond atom ids and coordinates
   abcoord1 = atomsCoord[ab2]
@@ -424,10 +424,6 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
 
   # angle of the first dihedral, to use as reference
   cphi = get_phi(atomsCoord[ab1], abcoord1, abcoord2, atomsCoord[ab4])
-  # print("# Initial angle (degrees): %f" % (180.0*cphi/np.pi))
-
-  # calculate the angle increment based on the total number of points to be calculated
-  dphi = 2.0*np.pi/npoints
   
   # open xyz output for the trajectory if needed
   if (printxyz):
@@ -442,14 +438,17 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
   died_energies = []
   nb_energies = []
   dipoles = []
-  for i in range(npoints):
+  for nphi in points:
+
+    dphi = nphi - cphi
+
     # rotate the atoms of the second fragment
     for atom in fpt2:
       if (atom == ab2) or (atom == ab3):
         continue
       atomsCoord[atom] = rotate_point(atomsCoord[atom], abcoord1, abcoord2, dphi)
 
-    en_tors = 0.0
+    en_tors = 0.
     # calculate the torsional
     for idx, died in potentialDict.items():
       phi = get_phi(atomsCoord[died[0]],atomsCoord[died[1]],atomsCoord[died[2]],atomsCoord[died[3]])
@@ -459,7 +458,7 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
         en_tors += energy_tors(died[4:],phi)
 
     # calculate the nonbonded contributions
-    en_nb = 0.0
+    en_nb = 0.
     for i in range(len(nzl)):
       atom1 = nzl[i] + 1
       atom2 = nzc[i] + 1
@@ -489,13 +488,13 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
 
     # print rotations if needed
     if (printxyz):
-      fxyz.write("%d\nDihedral = %f\n"%(natoms,shift_angle(180.0*cphi/np.pi)))
+      fxyz.write("%d\nDihedral = %f\n"%(natoms,shift_angle(180.*cphi/np.pi)))
       for i in range(1,natoms+1):
         fxyz.write("%s\t%f\t%f\t%f\n"%(atomsymbols[int(atomSp[i])],atomsCoord[i][0],atomsCoord[i][1],atomsCoord[i][2]))
 
     # print to .gjf
     if (gausstop):
-      fgjf.write(topfile.replace("ANGLEPLACEHOLDER",str(shift_angle(180.0*cphi/np.pi))))
+      fgjf.write(topfile.replace("ANGLEPLACEHOLDER",str(shift_angle(180.*cphi/np.pi))))
       for i in range(1,natoms+1):
         fgjf.write(" %s\t%f\t%f\t%f\n"%(atomsymbols[int(atomSp[i])],atomsCoord[i][0],atomsCoord[i][1],atomsCoord[i][2]))
       if gaussbot:
@@ -511,18 +510,18 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, npoints, base, pri
   return angles, died_energies, nb_energies, dipoles
 
 def shift_angle_pos(tetha):
-  if tetha < 0.0:
-    return tetha+360.0
-  elif tetha >= 360.0:
-    return tetha-360.0
+  if tetha < 0.:
+    return tetha+360.
+  elif tetha >= 360.:
+    return tetha-360.
   else:
     return tetha
 
 def shift_angle(tetha):
-  if tetha < 0.0:
+  if tetha < 0.:
     return tetha
-  elif tetha >= 180.0:
-    return tetha-360.0
+  elif tetha >= 180.:
+    return tetha-360.
   else:
     return tetha
 
@@ -530,11 +529,11 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Receives a DICE ".txt" and a DICE ".dfr" to calculate the energy with a dihedral specified by the reference atoms a1 a2 a3 a4.')
   parser.add_argument("txtfile", help="DICE's .txt file containing the molecule")
   parser.add_argument("dfrfile", help="DICE's .dfr file containing the force field constants fragment information")
-  parser.add_argument("a1", help="first atom defining the reference dihedral")
-  parser.add_argument("a2", help="second atom defining the reference dihedral")
-  parser.add_argument("a3", help="third atom defining the reference dihedral")
-  parser.add_argument("a4", help="fourth atom defining the reference dihedral")
-  parser.add_argument("npoints", nargs='?', help="number of points used to build the potential curve - default is 50", default=50)
+  parser.add_argument("a1", type=int, help="first atom defining the reference dihedral")
+  parser.add_argument("a2", type=int, help="second atom defining the reference dihedral")
+  parser.add_argument("a3", type=int, help="third atom defining the reference dihedral")
+  parser.add_argument("a4", type=int, help="fourth atom defining the reference dihedral")
+  parser.add_argument("npoints", type=int, nargs='?', help="number of points used to build the potential curve - default is 36", default=36)
   parser.add_argument("-o", "--output", help="base name for output files")
   parser.add_argument("--printxyz", help="print the trajectory of the rotations", action="store_true")
   parser.add_argument("--amber", help="use AMBER rule to 1-4 interactions and torsional energy", action="store_true")
@@ -553,7 +552,7 @@ if __name__ == '__main__':
   if args.output:
     base = args.output
   else:
-    base = "tors_"+args.a1+"-"+args.a2+"-"+args.a3+"-"+args.a4
+    base = "tors_"+str(args.a1)+"-"+str(args.a2)+"-"+str(args.a3)+"-"+str(args.a4)
 
   fout = open(base+".out", "w")
   fdihed = base+"_torsion.pdf"
@@ -566,10 +565,21 @@ if __name__ == '__main__':
   print("# Running command: %s\n#" % command)
   fout.write("# Running command: %s\n#\n" % command)
 
-  phi, tors_v, nb_v, dip = get_potential_curve(args.txtfile, args.dfrfile, int(args.a1), int(args.a2), int(args.a3), int(args.a4), int(args.npoints), base, args.printxyz, args.amber, args.gausstop, args.gaussbot)
+  # get the reference angle
+  _, _, _, atomsCoord, _ = parse_txt(args.txtfile)
+  refphi = get_phi(atomsCoord[args.a1], atomsCoord[args.a2], atomsCoord[args.a3], atomsCoord[args.a4])
+  print("# Initial angle (degrees): %f" % (180.*refphi/np.pi))
+
+
+  # calculate which points will be considered
+  points = np.arange(refphi, 2.*np.pi+refphi, 2.*np.pi/args.npoints)
+  print(refphi, len(points))
+
+  # get the curve
+  phi, tors_v, nb_v, dip = get_potential_curve(args.txtfile, args.dfrfile, int(args.a1), int(args.a2), int(args.a3), int(args.a4), points, base, args.printxyz, args.amber, args.gausstop, args.gaussbot)
 
   # convert to degrees and put it in [0,360) or in [-180,180)
-  degphi = [180.0*x/np.pi for x in phi]
+  degphi = [180.*x/np.pi for x in phi]
   if (args.shiftangles):
     shiftphi = [shift_angle_pos(x) for x in degphi]
   else:
@@ -615,7 +625,7 @@ if __name__ == '__main__':
   plt.plot(osphi,ostorsen)
   plt.xlabel(r"$\phi$ ($^\circ$)")
   if (args.shiftangles):
-    plt.xlim([0.0,360.0])
+    plt.xlim([0.,360.])
     plt.xticks([0,60,120,180,240,300,360])
   else:
     plt.xlim([-180,180])
@@ -628,7 +638,7 @@ if __name__ == '__main__':
   plt.plot(osphi,osnben)
   plt.xlabel(r"$\phi$ ($^\circ$)")
   if (args.shiftangles):
-    plt.xlim([0.0,360.0])
+    plt.xlim([0.,360.])
     plt.xticks([0,60,120,180,240,300,360])
   else:
     plt.xlim([-180,180])
@@ -641,7 +651,7 @@ if __name__ == '__main__':
   plt.plot(osphi,toten)
   plt.xlabel(r"$\phi$ ($^\circ$)")
   if (args.shiftangles):
-    plt.xlim([0.0,360.0])
+    plt.xlim([0.,360.])
     plt.xticks([0,60,120,180,240,300,360])
   else:
     plt.xlim([-180,180])
