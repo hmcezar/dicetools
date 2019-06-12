@@ -222,12 +222,12 @@ if __name__ == '__main__':
   xc = np.arange(-np.pi,np.pi, 0.02)
 
   # get the classical curve with current parameters
-  diedClass, _, nben, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, len(died), "", False, args.amber, False, False)
+  diedClass, _, nben, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, died, "", False, args.amber, False, False)
   # convert the angles and sort
   diedClass = [shift_angle_rad(x) for x in diedClass]
   diedClass, nben = (list(t) for t in zip(*sorted(zip(diedClass, nben))))
 
-  diedClass_fit, _, nben_fit, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, len(xc), "", False, args.amber, False, False)
+  diedClass_fit, _, nben_fit, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, xc, "", False, args.amber, False, False)
   # convert the angles and sort
   diedClass_fit = [shift_angle_rad(x) for x in diedClass_fit]
   diedClass_fit, nben_fit = (list(t) for t in zip(*sorted(zip(diedClass_fit, nben_fit))))
