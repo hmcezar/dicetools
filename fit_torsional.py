@@ -116,7 +116,7 @@ def fit_func_equals(phi, nequal, *args):
 def shift_angle_rad(tetha):
   if tetha < 0.0:
     return tetha
-  elif tetha >= np.pi:
+  elif tetha > np.pi:
     return tetha-(2.*np.pi)
   else:
     return tetha
@@ -180,14 +180,19 @@ if __name__ == '__main__':
   parser.add_argument("a3", type=int, help="third atom defining the reference dihedral")
   parser.add_argument("a4", type=int, help="fourth atom defining the reference dihedral")
   parser.add_argument("--amber", help="use AMBER rule to 1-4 interactions and torsional energy", action="store_true")
+  parser.add_argument("--plot-nben", help="plot the nonbonded energy in the final plot", action="store_true")
   parser.add_argument("--no-force-min", help="disable the bigger weight given to the minimum points by default", action="store_true")
-  parser.add_argument("--plot-minimums", help="plot the interpolated curve and the minimums that were found", action="store_true")
+  parser.add_argument("--force-surroundings", help="force the minimum and its surroundings points to be satisfied", action="store_true")
   parser.add_argument("--fit-to-spline", help="use the cubic spline curve for the fit instead of just the few points", action="store_true")
   parser.add_argument("--use-valence", help="also use valence of the atoms when finding similar dihedrals", action="store_true")
+  parser.add_argument("--weight-minimums", type=float, help="the weight that the minimums should have over the other points (default = 10)", default=10)
   parser.add_argument("--tolerance-dihedral", type=float, help="tolarance value for which dihedral angles are considered to be equal (default = 0.1 radians)", default=0.1)
   parser.add_argument("--bound-values", type=float, help="upper and lower bound [-val,+val] for the fitted parameters (default = 5)", default=5.)
   parser.add_argument("--cut-energy", type=float, help="the percentage of highest energies that should not be considered during the fit (default = 0.3)", default=0.3)
   args = parser.parse_args()
+
+  if args.force_surroundings and args.no_force_min:
+    print("Warning: If you are using --no-force-min the --force-surroundings is ignored.")
 
   # parse data from the log file
   died, enqm = parse_en_log_gaussian(args.logfile)
@@ -213,11 +218,21 @@ if __name__ == '__main__':
     acoords = [atomsCoord[x] for x in dihedralsDict[tors][:4]]
     dihAngles.append(get_phi(*acoords)-ref_ang)
 
+  # points for which the spline are calculated
+  xc = np.arange(-np.pi,np.pi, 0.02)
+
   # get the classical curve with current parameters
   diedClass, _, nben, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, len(died), "", False, args.amber, False, False)
   # convert the angles and sort
   diedClass = [shift_angle_rad(x) for x in diedClass]
   diedClass, nben = (list(t) for t in zip(*sorted(zip(diedClass, nben))))
+
+  diedClass_fit, _, nben_fit, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, len(xc), "", False, args.amber, False, False)
+  # convert the angles and sort
+  diedClass_fit = [shift_angle_rad(x) for x in diedClass_fit]
+  diedClass_fit, nben_fit = (list(t) for t in zip(*sorted(zip(diedClass_fit, nben_fit))))
+
+  xc = diedClass_fit.copy()
 
   # plotting options
   mpl.rcParams.update({'font.size':12, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
@@ -238,6 +253,11 @@ if __name__ == '__main__':
   enqm = [x-min_mq for x in enqm]
   min_class = nben[np.argmin(enqm)] # set as zero the same angle used before for QM
   nben = [x-min_class for x in nben]
+
+  min_class_fit = nben_fit[find_nearest_idx(xc,died[np.argmin(enqm)])]
+  nben_fit = [x-min_class_fit for x in nben_fit]
+  nben_fit = np.asarray(nben_fit)
+
   died = np.asarray(died)
   enqm = np.asarray(enqm)
   nben = np.asarray(nben)
@@ -247,7 +267,13 @@ if __name__ == '__main__':
 
   # Get the minimums of the enqm curve
   # set the initial and final points to have the same (lowest) energy
-  if enqm[len(enqm)-1] != enqm[0]:
+  if (abs(died[len(died)-1]) == np.pi) and (abs(died[0]) == np.pi):
+    minen = min([enqm[len(enqm)-1], enqm[0]])
+    died_spline = died.copy()
+    en_spline = enqm.copy()
+    en_spline[0] = minen
+    en_spline[len(en_spline)-1] = minen
+  elif enqm[len(enqm)-1] != enqm[0]:
     # if maximum
     if enqm[len(enqm)-1]-enqm[len(enqm)-2] > 0:
       if enqm[len(enqm)-1] > enqm[0]:
@@ -265,12 +291,17 @@ if __name__ == '__main__':
         died_spline = np.append(died, -died[0])
         en_spline = np.append(enqm, enqm[0])
   else:
-    died_spline = died
-    en_spline = enqm
+    died_spline = died.copy()
+    en_spline = enqm.copy()
 
   # set the boundaries for enfit too
-  died_enfit_spline = died
-  if enfit[len(enfit)-1] != enfit[0]:
+  died_enfit_spline = died.copy()
+  if (abs(died[len(died)-1]) == np.pi) and (abs(died[0]) == np.pi):
+    minen = min([enfit[0], enfit[len(enfit)-1]])
+    enfit_spline = enfit.copy()
+    enfit_spline[0] = minen
+    enfit_spline[len(enfit_spline)-1] = minen
+  elif enfit[len(enfit)-1] != enfit[0]:
     if abs(died[0]) != abs(died[len(died)-1]):
       # if maximum
       if enfit[len(enfit)-1]-enfit[len(enfit)-2] > 0:
@@ -288,50 +319,49 @@ if __name__ == '__main__':
         else:
           died_enfit_spline = np.append(died, -died[0])
           enfit_spline = np.append(enfit, enfit[0])
-    else:
-      print("entrei")
-      extremes = [enfit[0], enfit[len(enfit)-1]]
-      enfit_spline = enfit
-      enfit_spline[0] = min(extremes)
-      enfit_spline[len(enfit_spline)-1] = min(extremes)
   else:
-    enfit_spline = enfit
-
+    enfit_spline = enfit.copy()
 
   f = CubicSpline(died_spline, en_spline, bc_type='periodic')
   ffit = CubicSpline(died_enfit_spline, enfit_spline, bc_type='periodic')
   cr_pts = f.derivative().roots()
   deriv2 = f.derivative(2)
   cr_pts = np.delete(cr_pts, np.where(deriv2(cr_pts) < 0.))
-  xc = np.arange(-3.142,3.142, 0.02)
-
-  # plot the spline and minimums
-  if args.plot_minimums:
-    plt.plot(xc, f(xc), label='Cubic spline')
-    plt.plot(cr_pts, f(cr_pts), 'o', label="Minima")
-    plt.legend()
-    plt.xlabel(r"$\phi$ (radians)")
-    plt.ylabel(r"$E$ (kcal/mol)")
-    plt.xlim([-3.142,3.142])
-    plt.show()
 
   # order and remove the points relative to the transition states
   npremove = ceil(args.cut_energy*len(died))
   lowenremove = -np.sort(-enfit)[npremove-1]
   filtbar = np.where(enfit >= lowenremove)
+  filtxc = np.where(ffit(xc) >= lowenremove)
 
-  olddied = died
+  olddied = died.copy()
+  oldenfit = enfit.copy()
   died = np.delete(died, filtbar)
   enfit = np.delete(enfit, filtbar)
+  xcfit = np.delete(xc, filtxc)
 
   if not args.fit_to_spline:
     # give greater weight to minimums (smaller sigma is a grater weight)
     weights = np.ones(len(died))
-    if not args.no_force_min:
+    if (not args.no_force_min) and args.force_surroundings:
       idx_min = []
       for val in cr_pts:
         idx_min.append(find_nearest_idx(died,val))
-      weights[idx_min] = 0.1
+      idx_fit = idx_min.copy()
+      for idx in idx_min:
+        if idx == 0:
+          idx_fit.append(1)
+        elif idx == len(died)-1:
+          idx_fit.append(len(died)-2)
+        else:
+          idx_fit.append(idx-1)
+          idx_fit.append(idx+1)
+      weights[idx_fit] = 1./args.weight_minimums
+    elif not args.no_force_min:
+      idx_min = []
+      for val in cr_pts:
+        idx_min.append(find_nearest_idx(died,val))
+      weights[idx_min] = 1./args.weight_minimums
 
     if equals:
       popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
@@ -339,17 +369,34 @@ if __name__ == '__main__':
       popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
   else:
     # give greater weight to minimums (smaller sigma is a grater weight)
-    weights = np.ones(len(xc))
-    if not args.no_force_min:
+    weights = np.ones(len(xcfit))
+    if (not args.no_force_min) and args.force_surroundings:
+      idx_min = []
+      idx_min_died = []
+      for val in cr_pts:
+        idx_min_died.append(find_nearest_idx(died,val))
+      for val in cr_pts:
+        idx_min.append(find_nearest_idx(xcfit,val))
+      idx_fit = idx_min.copy()
+      for i, idx in enumerate(idx_min):
+        if idx == 0:
+          idx_fit.append(find_nearest_idx(xcfit,died[idx_min_died[i]+1]))
+        elif idx == (len(xcfit)-1):
+          idx_fit.append(find_nearest_idx(xcfit,died[idx_min_died[i]-1]))
+        else:
+          idx_fit.append(find_nearest_idx(xcfit,died[idx_min_died[i]-1]))
+          idx_fit.append(find_nearest_idx(xcfit,died[idx_min_died[i]+1]))
+      weights[idx_fit] = 1./args.weight_minimums
+    elif not args.no_force_min:
       idx_min = []
       for val in cr_pts:
-        idx_min.append(find_nearest_idx(died,val))
-      weights[idx_min] = 0.1
-
+        idx_min.append(find_nearest_idx(xcfit,val))
+      weights[idx_min] = 1./args.weight_minimums
+      
     if equals:
-      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), xc, ffit(xc), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
     else:
-      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), xc, ffit(xc), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
 
 
   if equals:
@@ -364,21 +411,34 @@ if __name__ == '__main__':
         new_popt += [round(x,3) for x in popt[tors*3:3*(tors+1)]]
     popt = np.asarray(new_popt)
   else:
-    popt = [round(x,3) for x in popt]
+    popt = np.asarray([round(x,3) for x in popt])
 
   # plot the curves to compare
   fcurv = []
-  for val in olddied:
+  for val in xc:
     fcurv.append(fit_func(val,*popt,*f0s))
+  fcurv = np.asarray(fcurv)
 
   # write the adjusted dfr
   write_dfr(args.dfrfile, dihedralsDict, popt, args.amber)
 
-  plt.plot(olddied, enqm, label='Gaussian total energy')
-  plt.plot(olddied, nben, label='Classical nonbonded energy')
-  plt.plot(died, enfit, label='Gaussian torsional energy')
-  plt.plot(olddied, fcurv, label='Fit')
-  plt.plot(olddied, fcurv+nben, label='Classical total energy')
+  print(enqm)
+  print(fcurv)
+  print(nben_fit)
+  print(oldenfit)
+  print(nben)
+
+  if args.plot_nben:
+    plt.plot(xc, nben_fit, label='Classical nonbonded energy')
+  if args.fit_to_spline:
+    plt.plot(xcfit, ffit(xcfit), label="Gaussian torsional (fit target)")
+  else:
+    plt.plot(died, enfit, label="Gaussian torsional (fit target)")
+  plt.plot(xc, fcurv, label='Fit')
+  plt.plot(olddied, oldenfit+nben, label='Gaussian total energy')
+  plt.plot(xc, f(xc), label='Gaussian total energy spline')
+  plt.plot(xc, fcurv+nben_fit, label='Classical total energy')
+  plt.plot(cr_pts, f(cr_pts), 'o', color='tab:green', label="Target minimums")
   plt.legend()
   plt.xlabel(r"$\phi$ (radians)")
   plt.ylabel(r"$E$ (kcal/mol)")
