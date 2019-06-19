@@ -423,6 +423,7 @@ if __name__ == '__main__':
   if args.fit_to_spline:
     strgt = ffit(xcfit)
   mins = f(cr_pts)
+  fminfit = ffit(cr_pts)
 
   # convert the angles to degrees
   died = [x*180./np.pi for x in died]
@@ -435,14 +436,13 @@ if __name__ == '__main__':
   mpl.rcParams.update({'font.size':14, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
 
   # plot the torsional energies
-  if args.plot_nben:
-    plt.plot(xc, nben_fit, label='Classical nonbonded energy')
   if args.fit_to_spline:
     plt.plot(xcfit, strgt, label="Gaussian torsional")
   else:
     plt.plot(died, enfit, label="Gaussian torsional")
 
   plt.plot(xc, fcurv, label='Fit')
+  plt.plot(cr_pts, fminfit, 'o', color='tab:green', label="Target points")
   plt.xlim([-180,180])
   plt.xticks([-180,-120,-60,0,60,120,180])
   plt.xlabel(r"$\phi$ ($^\circ$)")
@@ -452,6 +452,8 @@ if __name__ == '__main__':
   plt.gcf().clear()
 
   # plot the total energies
+  if args.plot_nben:
+    plt.plot(xc, nben_fit, label='Classical nonbonded energy')
   plt.plot(olddied, oldenfit+nben, label='Gaussian total energy')
   # plt.plot(xc, f(xc), label='Gaussian total energy spline')
   plt.plot(xc, fcurv+nben_fit, label='Classical total energy')
