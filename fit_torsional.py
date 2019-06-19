@@ -194,6 +194,8 @@ if __name__ == '__main__':
   if args.force_surroundings and args.no_force_min:
     print("Warning: If you are using --no-force-min the --force-surroundings is ignored.")
 
+  basename = os.path.splitext(os.path.basename(args.logfile))[0]
+
   # parse data from the log file
   died, enqm = parse_en_log_gaussian(args.logfile)
   died = [shift_angle_rad(x*np.pi/180.) for x in died]
@@ -231,9 +233,6 @@ if __name__ == '__main__':
   # convert the angles and sort
   diedClass_fit = [shift_angle_rad(x) for x in diedClass_fit]
   diedClass_fit, nben_fit = (list(t) for t in zip(*sorted(zip(diedClass_fit, nben_fit))))
-
-  # plotting options
-  mpl.rcParams.update({'font.size':12, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
 
   # prepare the data
   v0s = []
@@ -420,18 +419,46 @@ if __name__ == '__main__':
   # write the adjusted dfr
   write_dfr(args.dfrfile, dihedralsDict, popt, args.amber)
 
+  # functions to plot
+  if args.fit_to_spline:
+    strgt = ffit(xcfit)
+  mins = f(cr_pts)
+
+  # convert the angles to degrees
+  died = [x*180./np.pi for x in died]
+  olddied = [x*180./np.pi for x in olddied]
+  xc = [x*180./np.pi for x in xc]
+  xcfit = [x*180./np.pi for x in xcfit]
+  cr_pts = [x*180./np.pi for x in cr_pts]
+
+  # plotting options
+  mpl.rcParams.update({'font.size':14, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+
+  # plot the torsional energies
   if args.plot_nben:
     plt.plot(xc, nben_fit, label='Classical nonbonded energy')
   if args.fit_to_spline:
-    plt.plot(xcfit, ffit(xcfit), label="Gaussian torsional (fit target)")
+    plt.plot(xcfit, strgt, label="Gaussian torsional")
   else:
-    plt.plot(died, enfit, label="Gaussian torsional (fit target)")
+    plt.plot(died, enfit, label="Gaussian torsional")
+
   plt.plot(xc, fcurv, label='Fit')
+  plt.xlim([-180,180])
+  plt.xticks([-180,-120,-60,0,60,120,180])
+  plt.xlabel(r"$\phi$ ($^\circ$)")
+  plt.ylabel(r"$U_{torsional}$ (kcal/mol)")
+  plt.legend()
+  plt.savefig("fit_torsional_%s.pdf" % (basename), bbox_inches='tight')
+  plt.gcf().clear()
+
+  # plot the total energies
   plt.plot(olddied, oldenfit+nben, label='Gaussian total energy')
   # plt.plot(xc, f(xc), label='Gaussian total energy spline')
   plt.plot(xc, fcurv+nben_fit, label='Classical total energy')
-  plt.plot(cr_pts, f(cr_pts), 'o', color='tab:green', label="Target minimums")
+  plt.plot(cr_pts, mins, 'o', color='tab:green', label="Target minimums")
+  plt.xlim([-180,180])
+  plt.xticks([-180,-120,-60,0,60,120,180])
+  plt.xlabel(r"$\phi$ ($^\circ$)")
+  plt.ylabel(r"$U$ (kcal/mol)")
   plt.legend()
-  plt.xlabel(r"$\phi$ (radians)")
-  plt.ylabel(r"$E$ (kcal/mol)")
-  plt.show()
+  plt.savefig("fit_total_en_%s.pdf" % (basename), bbox_inches='tight')
