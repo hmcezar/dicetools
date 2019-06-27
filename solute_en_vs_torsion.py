@@ -59,7 +59,6 @@ if __name__ == '__main__':
 
   fig1.savefig("energies_"+os.path.splitext(args.dihfile)[0]+".pdf", bbox_inches='tight')
 
-
   # now bin the data taking averages
   mean_uintra = binned_statistic(dihedrals, uintra, statistic='mean', bins=360/args.nbins, range=(-180.0, 180.0))
   stddev_uintra = binned_statistic(dihedrals, uintra, statistic='std', bins=360/args.nbins, range=(-180.0, 180.0))
@@ -68,7 +67,7 @@ if __name__ == '__main__':
   stddev_uxs = binned_statistic(dihedrals, uxs, statistic='std', bins=360/args.nbins, range=(-180.0, 180.0))
 
   # prepare the data to plot
-  midbins = (mean_uintra.bin_edges[1:] + mean_uintra.bin_edges[:-1]) / 2
+  midbins = (mean_uintra.bin_edges[1:] + mean_uintra.bin_edges[:-1]) / 2.
   mask = np.ma.masked_invalid(mean_uintra.statistic)
   midbins = midbins[~mask.mask]
   uintra_avg = mean_uintra.statistic[~mask.mask]
@@ -86,6 +85,16 @@ if __name__ == '__main__':
   ax1.set_xlim([-180,180])
   ax1.set_xticks([-180,-120,-60,0,60,120,180])
   ax1.set_xlabel(r"$\phi$ ($^\circ$)")
+
+  # set both y axis having the same range
+  diffax1 = ax1.get_ylim()[1] - ax1.get_ylim()[0]
+  diffax2 = ax2.get_ylim()[1] - ax2.get_ylim()[0]
+  if diffax1 > diffax2:
+    center = ax2.get_ylim()[0] + diffax2/2.
+    ax2.set_ylim([center-diffax1/2.,center+diffax1/2.])
+  else:
+    center = ax1.get_ylim()[0] + diffax1/2.
+    ax1.set_ylim([center-diffax2/2.,center+diffax2/2.])
 
   ax1.set_ylabel(r"$\langle U_{intra} \rangle$ (kcal/mol)")
   ax2.set_ylabel(r"$\langle U_{xs} \rangle$ (kcal/mol)")
