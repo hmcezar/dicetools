@@ -57,6 +57,16 @@ if __name__ == '__main__':
   h2, l2 = ax2.get_legend_handles_labels()
   ax1.legend(h1+h2, l1+l2, bbox_to_anchor=(0,1.02,1,0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=2, markerscale=4)
 
+  # set both y axis having the same range
+  diffax1 = ax1.get_ylim()[1] - ax1.get_ylim()[0]
+  diffax2 = ax2.get_ylim()[1] - ax2.get_ylim()[0]
+  if diffax1 > diffax2:
+    center = ax2.get_ylim()[0] + diffax2/2.
+    ax2.set_ylim([center-diffax1/2.,center+diffax1/2.])
+  else:
+    center = ax1.get_ylim()[0] + diffax1/2.
+    ax1.set_ylim([center-diffax2/2.,center+diffax2/2.])
+
   fig1.savefig("energies_"+os.path.splitext(args.dihfile)[0]+".pdf", bbox_inches='tight')
 
   # now bin the data taking averages
@@ -85,6 +95,11 @@ if __name__ == '__main__':
   ax1.set_xlim([-180,180])
   ax1.set_xticks([-180,-120,-60,0,60,120,180])
   ax1.set_xlabel(r"$\phi$ ($^\circ$)")
+  ax1.set_ylabel(r"$\langle U_{intra} \rangle$ (kcal/mol)")
+  ax2.set_ylabel(r"$\langle U_{xs} \rangle$ (kcal/mol)")
+  h1, l1 = ax1.get_legend_handles_labels()
+  h2, l2 = ax2.get_legend_handles_labels()
+  ax1.legend(h1+h2, l1+l2, bbox_to_anchor=(0,1.02,1,0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=2, markerscale=1)
 
   # set both y axis having the same range
   diffax1 = ax1.get_ylim()[1] - ax1.get_ylim()[0]
@@ -95,11 +110,5 @@ if __name__ == '__main__':
   else:
     center = ax1.get_ylim()[0] + diffax1/2.
     ax1.set_ylim([center-diffax2/2.,center+diffax2/2.])
-
-  ax1.set_ylabel(r"$\langle U_{intra} \rangle$ (kcal/mol)")
-  ax2.set_ylabel(r"$\langle U_{xs} \rangle$ (kcal/mol)")
-  h1, l1 = ax1.get_legend_handles_labels()
-  h2, l2 = ax2.get_legend_handles_labels()
-  ax1.legend(h1+h2, l1+l2, bbox_to_anchor=(0,1.02,1,0.2), loc="lower left", mode="expand", borderaxespad=0, ncol=2, markerscale=1)
 
   fig2.savefig("avg_en_"+os.path.splitext(args.dihfile)[0]+".pdf", bbox_inches='tight')
