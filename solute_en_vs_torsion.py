@@ -92,6 +92,11 @@ if __name__ == '__main__':
   ax2 = ax1.twinx()
   ax2.errorbar(midbins, uxs_avg, marker="s", yerr=uxs_err, label=r"$\langle U_{xs} \rangle$", color="tab:red", markersize=6, capsize=2)
 
+  # write the data to screen
+  print("# phi (deg)\tavg(u_intra)\tstddev(u_intra)\tavg(u_uxs)\tstddev(u_uxs)")
+  for x, ui, uie, ux, uxe in zip(midbins,uintra_avg,uintra_err,uxs_avg,uxs_err):
+    print("%f\t%f\t%f\t%f\t%f" % (x, ui, uie, ux, uxe))
+
   ax1.set_xlim([-180,180])
   ax1.set_xticks([-180,-120,-60,0,60,120,180])
   ax1.set_xlabel(r"$\phi$ ($^\circ$)")
