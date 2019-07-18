@@ -271,21 +271,23 @@ if __name__ == '__main__':
     en_spline[0] = minen
     en_spline[len(en_spline)-1] = minen
   elif enqm[len(enqm)-1] != enqm[0]:
+    diffdied = died[len(died)-1] + died[0]
     # if maximum
     if enqm[len(enqm)-1]-enqm[len(enqm)-2] > 0:
+
       if enqm[len(enqm)-1] > enqm[0]:
-        died_spline = np.insert(died, 0, -died[len(died)-1])
+        died_spline = np.insert(died, 0, died[0]-diffdied)
         en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
       else:
-        died_spline = np.append(died, -died[0])
+        died_spline = np.append(died, died[len(died)-1]+diffdied)
         en_spline = np.append(enqm, enqm[0])
     # if minimum
     else:
       if enqm[len(enqm)-1] < enqm[0]:
-        died_spline = np.insert(died, 0, -died[len(died)-1])
+        died_spline = np.insert(died, 0, died[0]-diffdied)
         en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
       else:
-        died_spline = np.append(died, -died[0])
+        died_spline = np.append(died, died[len(died)-1]+diffdied)
         en_spline = np.append(enqm, enqm[0])
   else:
     died_spline = died.copy()
@@ -300,21 +302,22 @@ if __name__ == '__main__':
     enfit_spline[len(enfit_spline)-1] = minen
   elif enfit[len(enfit)-1] != enfit[0]:
     if abs(died[0]) != abs(died[len(died)-1]):
+      diffdied = died[len(died)-1] + died[0]
       # if maximum
       if enfit[len(enfit)-1]-enfit[len(enfit)-2] > 0:
         if enfit[len(enfit)-1] > enfit[0]:
-          died_enfit_spline = np.insert(died, 0, -died[len(died)-1])
+          died_enfit_spline = np.insert(died, 0, died[0]-diffdied)
           enfit_spline = np.insert(enfit, 0, enfit[len(enfit)-1])
         else:
-          died_enfit_spline = np.append(died, -died[0])
+          died_enfit_spline = np.append(died, died[len(died)-1]+diffdied)
           enfit_spline = np.append(enfit, enfit[0])
       # if minimum
       else:
         if enfit[len(enfit)-1] < enfit[0]:
-          died_enfit_spline = np.insert(died, 0, -died[len(died)-1])
+          died_enfit_spline = np.insert(died, 0, died[0]-diffdied)
           enfit_spline = np.insert(enfit, 0, enfit[len(enfit)-1])
         else:
-          died_enfit_spline = np.append(died, -died[0])
+          died_enfit_spline = np.append(died, died[len(died)-1]+diffdied)
           enfit_spline = np.append(enfit, enfit[0])
   else:
     enfit_spline = enfit.copy()
@@ -361,9 +364,19 @@ if __name__ == '__main__':
       weights[idx_min] = 1./args.weight_minimums
 
     if equals:
-      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      try:
+        popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      except Exception as e:
+        print("Problem while fitting the curve (%s)" % (str(e)))
+        print("If the problem is 'x0 is infeasible' use --bound-values to set a higher value")
+        sys.exit(0)
     else:
-      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      try:
+        popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      except Exception as e:
+        print("Problem while fitting the curve (%s)" % (str(e)))
+        print("If the problem is 'x0 is infeasible' use --bound-values to set a higher value")
+        sys.exit(0)
   else:
     # give greater weight to minimums (smaller sigma is a grater weight)
     weights = np.ones(len(xcfit))
