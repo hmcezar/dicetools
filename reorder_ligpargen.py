@@ -41,20 +41,21 @@ def reorder_gro(gro, mapp):
   fout = open("reordered_"+os.path.basename(gro), "w")
   with open(gro, "r") as f:
     fout.write(f.readline())
-    fout.write(f.readline())
+    natoms = f.readline()
+    fout.write(natoms)
+    natoms = int(natoms)
     
     # read the lines
-    line = f.readline()
     lines = []
-    while "UNL" in line:
-      lines.append(line)
+    for i in range(natoms):
       line = f.readline()
+      lines.append(line)
 
     # write reordering
     for i in range(len(lines)):
       fout.write(lines[mapp[i]])
 
-    fout.write(line)
+    fout.write(f.readline())
   fout.close()
 
 def reorder_itp(itp, mapp, imapp):
