@@ -10,8 +10,10 @@ import argparse
 import os
 import numpy as np
 import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from scipy.stats import binned_statistic
+from distutils.spawn import find_executable
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Receives a .dat containing a set of dihedral angles and plot U_xs and U1_intra vs these dihedrals")
@@ -39,7 +41,11 @@ if __name__ == '__main__':
         cnt += 1
         uxs = np.append(uxs, float(line.split()[2]))
 
-  mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  # plot it
+  if find_executable('latex'):
+    mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  else:
+    mpl.rcParams.update({'font.size':18, 'font.family':'serif', 'ytick.major.pad':4})
 
   fig1 = plt.figure()
   ax1 = fig1.add_subplot(1,1,1)

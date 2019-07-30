@@ -13,7 +13,7 @@ mpl.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import UnivariateSpline
-# import seaborn as sns
+from distutils.spawn import find_executable
 
 def get_pdf(data, nbins):
   p, x = np.histogram(data, density = True, bins = nbins)
@@ -57,9 +57,6 @@ if __name__ == '__main__':
       n += 1
     pdfname = basename+"_%02d.pdf"%n
 
-  # ez plot ez life (enable seaborn import)
-  # ax = sns.distplot(data,bins=int(args.nbins))
-
   # calculate the pdf (from a histogram and interpolating)
   x, pdf = get_pdf(data, int(args.nbins))
 
@@ -69,7 +66,11 @@ if __name__ == '__main__':
       f.write("%f\t%f\n" % (v, pdf(v)))
 
   # plot
-  mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  if find_executable('latex'):  
+    mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  else:
+    mpl.rcParams.update({'font.size':18, 'font.family':'serif', 'ytick.major.pad':4})    
+
   plt.plot(x,pdf(x))
   if args.shiftangles:
     plt.xlim([0.0,360.0])

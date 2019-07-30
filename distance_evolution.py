@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import pybel
 import openbabel
 import os
+from distutils.spawn import find_executable
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Receives a .xyz or .pdb and two atom numbers to compute the distance between the two points and plot a temporal evolution.")
@@ -37,7 +38,11 @@ if __name__ == '__main__':
   step = [x*stepmult for x in range(1,len(distances)+1)]
 
   # plot it
-  mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  if find_executable('latex'):
+    mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  else:
+    mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+
 
   plt.plot(step,distances)
 
@@ -46,4 +51,3 @@ if __name__ == '__main__':
   plt.xlim([0,step[-1]])
 
   plt.savefig("distance_evolution.pdf", bbox_inches='tight')
-  plt.show()

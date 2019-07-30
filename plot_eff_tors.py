@@ -14,8 +14,9 @@ from numpy import sin
 from numpy import sqrt
 import matplotlib as mpl
 # Force matplotlib to not use any Xwindows backend.
-# mpl.use('Agg')
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+from distutils.spawn import find_executable
 try:
   from Queue import Queue
 except:
@@ -619,7 +620,10 @@ if __name__ == '__main__':
   fout.close()
 
   # plotting options
-  mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  if find_executable('latex'):
+    mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  else:
+    mpl.rcParams.update({'font.size':18, 'font.family':'serif', 'ytick.major.pad':4})
 
   # plot torsional energy
   plt.plot(osphi,ostorsen)

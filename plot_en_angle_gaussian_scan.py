@@ -8,8 +8,9 @@ Date: APR/2018
 import argparse
 import matplotlib as mpl
 # Force matplotlib to not use any Xwindows backend.
-# mpl.use('Agg')
+mpl.use('Agg')
 import matplotlib.pyplot as plt
+from distutils.spawn import find_executable
 
 def parse_en_log_gaussian(fname):
   died = []
@@ -55,7 +56,10 @@ if __name__ == '__main__':
     print("%f\t%f" % (ang, en))
 
   # plot it
-  mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  if find_executable('latex'):
+    mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  else:
+    mpl.rcParams.update({'font.size':18, 'font.family':'serif', 'ytick.major.pad':4})
 
   plt.plot(died,ener)
   plt.xlim([-180,180])

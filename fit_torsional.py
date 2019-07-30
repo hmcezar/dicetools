@@ -18,6 +18,7 @@ from scipy import optimize
 from scipy.interpolate import CubicSpline
 from plot_en_angle_gaussian_scan import parse_en_log_gaussian
 from plot_eff_tors import *
+from distutils.spawn import find_executable
 
 def species_coord_to_openbabel(species, coord):
   mol = openbabel.OBMol()
@@ -446,7 +447,11 @@ if __name__ == '__main__':
   cr_pts = [x*180./np.pi for x in cr_pts]
 
   # plotting options
-  mpl.rcParams.update({'font.size':14, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  if find_executable('latex'):
+    mpl.rcParams.update({'font.size':14, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
+  else:
+    mpl.rcParams.update({'font.size':14, 'font.family':'serif', 'ytick.major.pad':4})
+
 
   # plot the torsional energies
   if args.fit_to_spline:
