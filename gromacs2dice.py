@@ -117,7 +117,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 					continue
 
 				# check if the line has the right dihedral type
-				if line.split()[4] != dtype:
+				if int(line.split()[4]) != dtype:
 					continue
 
 				if (line.split()[0] == t1 and line.split()[1] == t2 and line.split()[2] == t3 and line.split()[3] == t4) or (line.split()[0] == t4 and line.split()[1] == t3 and line.split()[2] == t2 and line.split()[3] == t1):
@@ -134,7 +134,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 					if line.strip().startswith(";") or line.strip().startswith("#") or len(line.strip()) == 0:
 						continue	
 					# check if it's not an improper dihedral
-					if line.split()[4] != dtype:
+					if int(line.split()[4]) != dtype:
 						continue
 
 					if (line.split()[0] == "X" and line.split()[1] == t2 and line.split()[2] == t3 and line.split()[3] == t4) or (line.split()[0] == t4 and line.split()[1] == t3 and line.split()[2] == t2 and line.split()[3] == "X"):
@@ -154,7 +154,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 						continue
 
 					# check if the line has the right dihedral type
-					if line.split()[4] != dtype:
+					if int(line.split()[4]) != dtype:
 						continue
 
 					if (line.split()[0] == "X" and line.split()[1] == t2 and line.split()[2] == t3 and line.split()[3] == "X") or (line.split()[0] == "X" and line.split()[1] == t3 and line.split()[2] == t2 and line.split()[3] == "X"):
@@ -413,7 +413,7 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, ffname, path):
 				ipline[dihline] = [line]
 		# get parameters from ffbonded.itp
 		elif len(line.split()) == 5:
-			ffline = lookup_ffdihedral(atoms[line.split()[0]][9], atoms[line.split()[1]][9], atoms[line.split()[2]][9], atoms[line.split()[3]][9], line.split()[4], ffname, path)
+			ffline = lookup_ffdihedral(atoms[line.split()[0]][9], atoms[line.split()[1]][9], atoms[line.split()[2]][9], atoms[line.split()[3]][9], int(line.split()[4]), ffname, path)
 		else:
 			print("Error: something is wrong in dihedral line (%s) maybe the number of parameters?" % (line))
 			sys.exit(0)
