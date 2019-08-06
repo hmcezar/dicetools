@@ -199,6 +199,8 @@ if __name__ == '__main__':
   parser.add_argument("--plot-initial-guess", help="plot the curve using the parameters from the given dfr", action="store_true")
   parser.add_argument("--no-force-min", help="disable the bigger weight given to the minimum points by default", action="store_true")
   parser.add_argument("--force-surroundings", help="force the minimum and its surroundings points to be satisfied", action="store_true")
+  parser.add_argument("--force-similar-params", nargs="+", action="store", type=str, help="receives lists of indexes (based on the .dfr) of dihedrals that should have the same set of parameters. Example: 1,2,3 4,5,6 (spaces indicate a different set of similar parameters)'")
+  parser.add_argument("--force-different-params", help="force the parameters for each dihedral to be different, i.e., does not use any chemical information when fitting", action="store_true")
   parser.add_argument("--fit-to-spline", help="use the cubic spline curve for the fit instead of just the few points", action="store_true")
   parser.add_argument("--use-valence", help="also use valence of the atoms when finding similar dihedrals", action="store_true")
   parser.add_argument("--weight-minimums", type=float, help="the weight that the minimums should have over the other points (default = 10)", default=10)
@@ -224,7 +226,12 @@ if __name__ == '__main__':
   mol = species_coord_to_openbabel(atomSp, atomsCoord)
 
   # get dihedrals which should have the same parameters
-  equals = equal_parameters([dihedralsDict[x][:4] for x in dihedralsDict], mol, args.tolerance_dihedral, args.use_valence)
+  if not args.force_similar_params and not args.force_different_params:
+    equals = equal_parameters([dihedralsDict[x][:4] for x in dihedralsDict], mol, args.tolerance_dihedral, args.use_valence)
+  elif args.force_similar_params:
+    equals = [[int(y)-1 for y in x.split(",")] for x in args.force_similar_params]
+  else:
+    equals = False
 
   # get reference angle
   acoords = [atomsCoord[x] for x in [args.a1, args.a2, args.a3, args.a4]]
