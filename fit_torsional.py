@@ -183,6 +183,7 @@ if __name__ == '__main__':
   parser.add_argument("a4", type=int, help="fourth atom defining the reference dihedral")
   parser.add_argument("--amber", help="use AMBER rule to 1-4 interactions and torsional energy", action="store_true")
   parser.add_argument("--plot-nben", help="plot the nonbonded energy in the final plot", action="store_true")
+  parser.add_argument("--plot-initial-guess", help="plot the curve using the parameters from the given dfr", action="store_true")
   parser.add_argument("--no-force-min", help="disable the bigger weight given to the minimum points by default", action="store_true")
   parser.add_argument("--force-surroundings", help="force the minimum and its surroundings points to be satisfied", action="store_true")
   parser.add_argument("--fit-to-spline", help="use the cubic spline curve for the fit instead of just the few points", action="store_true")
@@ -231,10 +232,11 @@ if __name__ == '__main__':
   # points for which the spline are calculated
   xc = np.arange(-np.pi,np.pi, 0.02)
   
-  diedClass_fit, _, nben_fit, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, xc, "", False, args.amber, False, False)
+  diedClass_fit, den_fit, nben_fit, _ =  get_potential_curve(args.txtfile, args.dfrfile, args.a1, args.a2, args.a3, args.a4, xc, "", False, args.amber, False, False)
   # convert the angles and sort
-  diedClass_fit = [shift_angle_rad(x) for x in diedClass_fit]
-  diedClass_fit, nben_fit = (list(t) for t in zip(*sorted(zip(diedClass_fit, nben_fit))))
+  convDied_fit = [shift_angle_rad(x) for x in diedClass_fit]
+  diedClass_fit, den_fit = (list(t) for t in zip(*sorted(zip(convDied_fit, den_fit))))
+  diedClass_fit, nben_fit = (list(t) for t in zip(*sorted(zip(convDied_fit, nben_fit))))
 
   # prepare the data
   v0s = []
@@ -253,6 +255,9 @@ if __name__ == '__main__':
   min_class = nben[np.argmin(enqm)] # set as zero the same angle used before for QM
   nben = [x-min_class for x in nben]
 
+  min_class_fit = den_fit[find_nearest_idx(xc,died[np.argmin(enqm)])]
+  den_fit = [x-min_class_fit for x in den_fit]
+  den_fit = np.asarray(den_fit)
   min_class_fit = nben_fit[find_nearest_idx(xc,died[np.argmin(enqm)])]
   nben_fit = [x-min_class_fit for x in nben_fit]
   nben_fit = np.asarray(nben_fit)
@@ -461,6 +466,9 @@ if __name__ == '__main__':
     plt.plot(died, enfit, label="Gaussian torsional")
 
   plt.plot(xc, fcurv, label='Fit')
+
+  if args.plot_initial_guess:
+    plt.plot(xc, den_fit, label="Initial guess")
   plt.plot(cr_pts, fminfit, 'o', color='tab:green', label="Target points")
   plt.xlim([-180,180])
   plt.xticks([-180,-120,-60,0,60,120,180])
@@ -476,6 +484,8 @@ if __name__ == '__main__':
   plt.plot(olddied, oldenfit+nben, label='Gaussian total energy')
   # plt.plot(xc, f(xc), label='Gaussian total energy spline')
   plt.plot(xc, fcurv+nben_fit, label='Classical total energy')
+  if args.plot_initial_guess:
+    plt.plot(xc, den_fit+nben_fit, label="Initial guess")
   plt.plot(cr_pts, mins, 'o', color='tab:green', label="Target minimums")
   plt.xlim([-180,180])
   plt.xticks([-180,-120,-60,0,60,120,180])
