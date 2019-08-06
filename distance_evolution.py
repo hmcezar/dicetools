@@ -38,7 +38,7 @@ if __name__ == '__main__':
   step = [x*stepmult for x in range(1,len(distances)+1)]
 
   # plot it
-  if find_executable('latex'):
+  if find_executable('latex') and find_executable('dvipng'):
     mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
   else:
     mpl.rcParams.update({'font.size':18, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})

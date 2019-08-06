@@ -9,6 +9,7 @@ Date: MAY/2019
 import argparse
 import numpy as np
 import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import openbabel
 import pybel
@@ -447,7 +448,7 @@ if __name__ == '__main__':
   cr_pts = [x*180./np.pi for x in cr_pts]
 
   # plotting options
-  if find_executable('latex'):
+  if find_executable('latex') and find_executable('dvipng'):
     mpl.rcParams.update({'font.size':14, 'text.usetex':True, 'font.family':'serif', 'ytick.major.pad':4})
   else:
     mpl.rcParams.update({'font.size':14, 'font.family':'serif', 'ytick.major.pad':4})
