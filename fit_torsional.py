@@ -64,12 +64,24 @@ def equal_parameters(dihedrals, mol, tolerance, usevalence):
   # compare angles to check if dihedrals are really equal
   clean_pairs = []
   for pair in equals:
-    ang1 = abs(round(dihAngles[pair[0]],4))
-    ang2 = abs(round(dihAngles[pair[1]],4))
+    ang1 = round(dihAngles[pair[0]],4)
+    ang2 = round(dihAngles[pair[1]],4)
     if abs(ang1-ang2) <= tolerance:
       clean_pairs.append(pair)
 
-  return clean_pairs
+  # join the pairs if needed
+  diff_lists = []
+  for pair in clean_pairs:
+    fnd = False
+    for i, val in enumerate(diff_lists):
+      if (pair[0] in val) or (pair[1] in val):
+        diff_lists[i] += pair
+        fnd = True
+
+    if not fnd:
+      diff_lists.append(pair)
+
+  return [sorted(list(set(x))) for x in diff_lists]
 
 
 def torsen_opls(phi, V1, V2, V3, f1, f2, f3):
@@ -93,22 +105,23 @@ def fit_func(phi, *args):
   return sumf
 
 
-def fit_func_equals(phi, nequal, *args):
+def fit_func_equals(phi, *args):
   # first half are vs
-  vs = args[:int((len(args)-nequal+1)/2)]
+  vs = args[:int((len(args)-1)/2)]
   # second half are fs
-  fs = args[int((len(args)-nequal+1)/2):len(args)-nequal+1]
+  fs = args[int((len(args)-1)/2):len(args)-1]
   # identification of equal parameters
-  equal = args[len(args)-nequal+1:][0]
+  equal = args[-1]
 
   nfunc = int(len(vs)/3)
   sumf = 0.
   for i in range(nfunc):
     calc = False
-    for pair in equal:
-      if i == pair[1]:
-        sumf += torsen_opls(phi,*vs[3*pair[0]:3*(pair[0]+1)],*fs[3*i:3*(i+1)])
+    for lst in equal:
+      if i in lst:
+        sumf += torsen_opls(phi,*vs[3*lst[0]:3*(lst[0]+1)],*fs[3*i:3*(i+1)])
         calc = True
+        break
     if not calc:
       sumf += torsen_opls(phi,*vs[3*i:3*(i+1)],*fs[3*i:3*(i+1)])
 
@@ -372,7 +385,7 @@ if __name__ == '__main__':
 
     if equals:
       try:
-        popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
+        popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, *vs, *f0s, equals), died, enfit, p0=v0s, bounds=(lbound,ubound), sigma=weights)
       except Exception as e:
         print("Problem while fitting the curve (%s)" % (str(e)))
         print("If the problem is 'x0 is infeasible' use --bound-values to set a higher value")
@@ -411,18 +424,18 @@ if __name__ == '__main__':
       weights[idx_min] = 1./args.weight_minimums
       
     if equals:
-      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, len(equals), *vs, *f0s, equals), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, *vs, *f0s, equals), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
     else:
       popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
 
-
   if equals:
+    print(equals)
     new_popt = []
     for tors in range(int(len(popt)/3)):
       fnd = False
-      for pair in equals:
-        if tors == pair[1]:
-          new_popt += [round(x,3) for x in popt[pair[0]*3:3*(pair[0]+1)]]
+      for lst in equals:
+        if tors in lst:
+          new_popt += [round(x,3) for x in popt[lst[0]*3:3*(lst[0]+1)]]
           fnd = True
       if not fnd:
         new_popt += [round(x,3) for x in popt[tors*3:3*(tors+1)]]
