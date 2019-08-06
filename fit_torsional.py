@@ -289,7 +289,6 @@ if __name__ == '__main__':
   # subtract the nonbonded energy to get the "QM torsional"
   enfit = enqm - nben
 
-  # Get the minimums of the enqm curve
   # set the initial and final points to have the same (lowest) energy
   if (abs(died[len(died)-1]) == np.pi) and (abs(died[0]) == np.pi):
     minen = min([enqm[len(enqm)-1], enqm[0]])
@@ -306,7 +305,7 @@ if __name__ == '__main__':
         died_spline = np.insert(died, 0, died[0]-diffdied)
         en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
       else:
-        died_spline = np.append(died, died[len(died)-1]+diffdied)
+        died_spline = np.append(died, died[len(died)-1]-diffdied)
         en_spline = np.append(enqm, enqm[0])
     # if minimum
     else:
@@ -314,7 +313,7 @@ if __name__ == '__main__':
         died_spline = np.insert(died, 0, died[0]-diffdied)
         en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
       else:
-        died_spline = np.append(died, died[len(died)-1]+diffdied)
+        died_spline = np.append(died, died[len(died)-1]-diffdied)
         en_spline = np.append(enqm, enqm[0])
   else:
     died_spline = died.copy()
@@ -336,7 +335,7 @@ if __name__ == '__main__':
           died_enfit_spline = np.insert(died, 0, died[0]-diffdied)
           enfit_spline = np.insert(enfit, 0, enfit[len(enfit)-1])
         else:
-          died_enfit_spline = np.append(died, died[len(died)-1]+diffdied)
+          died_enfit_spline = np.append(died, died[len(died)-1]-diffdied)
           enfit_spline = np.append(enfit, enfit[0])
       # if minimum
       else:
@@ -344,7 +343,7 @@ if __name__ == '__main__':
           died_enfit_spline = np.insert(died, 0, died[0]-diffdied)
           enfit_spline = np.insert(enfit, 0, enfit[len(enfit)-1])
         else:
-          died_enfit_spline = np.append(died, died[len(died)-1]+diffdied)
+          died_enfit_spline = np.append(died, died[len(died)-1]-diffdied)
           enfit_spline = np.append(enfit, enfit[0])
   else:
     enfit_spline = enfit.copy()
@@ -436,7 +435,6 @@ if __name__ == '__main__':
       popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
 
   if equals:
-    print(equals)
     new_popt = []
     for tors in range(int(len(popt)/3)):
       fnd = False
