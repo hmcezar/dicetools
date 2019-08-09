@@ -185,13 +185,16 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 	# in amber, we need to sum all the contributions to a single dihedral
 	else:
 		if len(fnd_lines) >= 1:
-			params = [0.0] * 6
+			params = [0.0] * 8
 			for line in fnd_lines:
 				n = int(line.split()[7])
 				# have to multiply by 2.0 since I use the 0.5*(...) version of the AMBER definition
 				params[n-1] = 2.0*float(line.split()[6])
-				params[n+2] = float(line.split()[5])
-			retline = "%s\t%s\t%s\t%s\t%d\t%f\t%f\t%f\t%f\t%f\t%f" % (t1,t2,t3,t4,dtype,params[0],params[1],params[2],params[3],params[4],params[5])
+				params[n+3] = float(line.split()[5])
+			if (params[3] == 0.):
+				retline = "%s\t%s\t%s\t%s\t%d\t%f\t%f\t%f\t%f\t%f\t%f" % (t1,t2,t3,t4,dtype,params[0],params[1],params[2],params[4],params[5],params[6])
+			else:
+				retline = "%s\t%s\t%s\t%s\t%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f" % (t1,t2,t3,t4,dtype,params[0],params[1],params[2],params[3],params[4],params[5],params[6],params[7])				
 			return retline
 
 	print("Warning: the atom types (%s,%s,%s,%s) were not found in ffbonded.itp... Add manually later" % (t1, t2, t3, t4))
@@ -426,7 +429,10 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, ffname, path):
 
 			if "amber" in ffname:
 				# parameters are already of Fourier type, just need to convert to cal
-				dihedrals.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+" "+line.split()[3]+"   \t"+potname+"\t"+str(j2cal(float(ffline.split()[5])))+"\t"+str(j2cal(float(ffline.split()[6])))+"\t"+str(j2cal(float(ffline.split()[7])))+"\t"+ffline.split()[8]+"\t"+ffline.split()[9]+"\t"+ffline.split()[10]+"\n")
+				if len(ffline.split()) == 11:
+					dihedrals.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+" "+line.split()[3]+"   \t"+potname+"\t"+str(j2cal(float(ffline.split()[5])))+"\t"+str(j2cal(float(ffline.split()[6])))+"\t"+str(j2cal(float(ffline.split()[7])))+"\t"+ffline.split()[8]+"\t"+ffline.split()[9]+"\t"+ffline.split()[10]+"\n")
+				else:
+					dihedrals.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+" "+line.split()[3]+"   \t"+potname+"\t"+str(j2cal(float(ffline.split()[5])))+"\t"+str(j2cal(float(ffline.split()[6])))+"\t"+str(j2cal(float(ffline.split()[7])))+"\t"+str(j2cal(float(ffline.split()[8])))+"\t"+ffline.split()[9]+"\t"+ffline.split()[10]+"\t"+ffline.split()[11]+"\t"+ffline.split()[12]+"\n")
 			else:
 				if float(ffline.split()[9]) != 0.0 or float(ffline.split()[10]) != 0.0:
 					print("Parameters for %s - %s - %s - %s dihedrals are undefined, please treat by hand!" % (atoms[line.split()[0]][9], atoms[line.split()[1]][9], atoms[line.split()[2]][9], atoms[line.split()[3]][9]))
