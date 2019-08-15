@@ -372,19 +372,23 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, points, base, prin
 
   # put gausstop file contents into a string
   if gausstop:
-    # check the number of lines to append to the comment the dihedral angle
-    topfile = ""
-    with open(gausstop, 'r') as f:
-      for i, line in enumerate(f,1):
-        pass
-
-      f.seek(0)
-
-      for j, line in enumerate(f,1):
-        if (j == i-2):
-          topfile+=line.rstrip()+" dihedral = ANGLEPLACEHOLDER\n"
-        else:
-          topfile+=line
+    # put the dihedral in the first comment line (thanks Tarcius for the patch!)
+    with open(gausstop,'r') as f:
+      toplines = f.readlines()
+    ntopmax = len(toplines)
+    for ntop in range(ntopmax):
+      if not toplines[ntop].strip():
+        toplines[ntop+1] = "dihedral = ANGLEPLACEHOLDER\n" + toplines[ntop+1]
+        break
+    ntop += 1
+    clines = 1
+    while toplines[ntop].strip() and clines <= 6:
+      clines += 1
+      ntop+=1
+    if clines > 5:
+      print("Your gausstop file should not have more than 4 lines in the title section, as one line is added to hold the dihedral angle. Aborting.")
+      sys.exit(0)
+    topfile = ''.join(toplines)
       
   # put gaussbot file into a string
   if gaussbot:
@@ -574,7 +578,6 @@ if __name__ == '__main__':
 
   # calculate which points will be considered
   points = np.arange(refphi, 2.*np.pi+refphi, 2.*np.pi/args.npoints)
-  print(refphi, len(points))
 
   # get the curve
   phi, tors_v, nb_v, dip = get_potential_curve(args.txtfile, args.dfrfile, int(args.a1), int(args.a2), int(args.a3), int(args.a4), points, base, args.printxyz, args.amber, args.gausstop, args.gaussbot)
