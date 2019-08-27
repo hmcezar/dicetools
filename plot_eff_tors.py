@@ -421,7 +421,7 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, points, base, prin
     if (mult):
       nbParams[atom][2] = sqrt(nbParams[atom][2])
     else:
-      nbParams[atom][2] = nbarams[atom][2]/2.
+      nbParams[atom][2] = nbParams[atom][2]/2.
 
   # get the common bond atom ids and coordinates
   abcoord1 = atomsCoord[ab2]
