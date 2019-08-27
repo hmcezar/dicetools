@@ -289,67 +289,13 @@ if __name__ == '__main__':
   # subtract the nonbonded energy to get the "QM torsional"
   enfit = enqm - nben
 
-  # set the initial and final points to have the same (lowest) energy
-  if (abs(died[len(died)-1]) == np.pi) and (abs(died[0]) == np.pi):
-    minen = min([enqm[len(enqm)-1], enqm[0]])
-    died_spline = died.copy()
-    en_spline = enqm.copy()
-    en_spline[0] = minen
-    en_spline[len(en_spline)-1] = minen
-  elif enqm[len(enqm)-1] != enqm[0]:
-    diffdied = died[len(died)-1] + died[0]
-    # if maximum
-    if enqm[len(enqm)-1]-enqm[len(enqm)-2] > 0:
-
-      if enqm[len(enqm)-1] > enqm[0]:
-        died_spline = np.insert(died, 0, died[0]-diffdied)
-        en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
-      else:
-        died_spline = np.append(died, died[len(died)-1]-diffdied)
-        en_spline = np.append(enqm, enqm[0])
-    # if minimum
-    else:
-      if enqm[len(enqm)-1] < enqm[0]:
-        died_spline = np.insert(died, 0, died[0]-diffdied)
-        en_spline = np.insert(enqm, 0, enqm[len(enqm)-1])
-      else:
-        died_spline = np.append(died, died[len(died)-1]-diffdied)
-        en_spline = np.append(enqm, enqm[0])
-  else:
-    died_spline = died.copy()
-    en_spline = enqm.copy()
-
-  # set the boundaries for enfit too
+  died_spline = died.copy()
+  en_spline = enqm.copy()
   died_enfit_spline = died.copy()
-  if (abs(died[len(died)-1]) == np.pi) and (abs(died[0]) == np.pi):
-    minen = min([enfit[0], enfit[len(enfit)-1]])
-    enfit_spline = enfit.copy()
-    enfit_spline[0] = minen
-    enfit_spline[len(enfit_spline)-1] = minen
-  elif enfit[len(enfit)-1] != enfit[0]:
-    if abs(died[0]) != abs(died[len(died)-1]):
-      diffdied = died[len(died)-1] + died[0]
-      # if maximum
-      if enfit[len(enfit)-1]-enfit[len(enfit)-2] > 0:
-        if enfit[len(enfit)-1] > enfit[0]:
-          died_enfit_spline = np.insert(died, 0, died[0]-diffdied)
-          enfit_spline = np.insert(enfit, 0, enfit[len(enfit)-1])
-        else:
-          died_enfit_spline = np.append(died, died[len(died)-1]-diffdied)
-          enfit_spline = np.append(enfit, enfit[0])
-      # if minimum
-      else:
-        if enfit[len(enfit)-1] < enfit[0]:
-          died_enfit_spline = np.insert(died, 0, died[0]-diffdied)
-          enfit_spline = np.insert(enfit, 0, enfit[len(enfit)-1])
-        else:
-          died_enfit_spline = np.append(died, died[len(died)-1]-diffdied)
-          enfit_spline = np.append(enfit, enfit[0])
-  else:
-    enfit_spline = enfit.copy()
+  enfit_spline = enfit.copy()
 
-  f = CubicSpline(died_spline, en_spline, bc_type='periodic')
-  ffit = CubicSpline(died_enfit_spline, enfit_spline, bc_type='periodic')
+  f = CubicSpline(died_spline, en_spline)
+  ffit = CubicSpline(died_enfit_spline, enfit_spline)
   cr_pts = f.derivative().roots()
   deriv2 = f.derivative(2)
   cr_pts = np.delete(cr_pts, np.where(deriv2(cr_pts) < 0.))
