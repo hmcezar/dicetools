@@ -193,6 +193,10 @@ def find_rigid_parts(frags, fconn, a1, a2, a3, a4):
     print("You should have atoms %d and %d belonging just to two fragments" % (a2, a3))
     sys.exit(0)
 
+  if len(fragsParts) < 2:
+    print("You should have atoms %d and %d belonging to two fragments. Maybe it's the sequence does not define a dihedral?" % (a2, a3))
+    sys.exit(0)
+
   # based on the fragment connections, build the two parts running a BFS exploration
   pt1 = frags[fragsParts[0]]
   pt2 = frags[fragsParts[1]]
