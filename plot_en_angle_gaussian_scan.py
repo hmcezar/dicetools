@@ -22,7 +22,7 @@ def parse_en_log_gaussian(fname):
         break
 
     # if MP2 get the energy corrected by the perturbation
-    if "MP2" in line:
+    if "MP2" in line.upper():
       mp2 = True
     else:
       mp2 = False
