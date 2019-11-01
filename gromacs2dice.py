@@ -222,7 +222,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 def strip_comment(string, token=';'):
 	return string.split(token)[0].strip()
 
-def top2dfr(topfile, geomfile, flexfrag, eqgeom, ffname, path):
+def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, ffname, path):
 	if "amber" in ffname:
 		potname = "AMBER"
 	else:
@@ -361,7 +361,10 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, ffname, path):
 	os.remove(temp_path)
 	os.remove(base+".dfr")
 	os.remove(base+".txt")
-	shutil.rmtree(base+"_fragments")
+	if savefrags:
+		shutil.move(base+"_fragments", os.path.join(os.path.dirname(os.path.abspath(geomfile)), os.path.splitext(os.path.basename(topfile))[0]+"_fragments"))
+	else:
+		shutil.rmtree(base+"_fragments")
 
 	# !!! units should be converted as in: http://chembytes.wikidot.com/oplsaagro2tnk !!!
 
@@ -541,6 +544,7 @@ if __name__ == '__main__':
 	parser.add_argument("geomfile", help="the geometry file used to generate the topology (the order of the atoms must be the same of the topology!)")
 	parser.add_argument("--gromacs-ff-path", "-p", help="specifies the GROMACS top directory (default: /usr/local/gromacs/share/gromacs/top/)", default="/usr/local/gromacs/share/gromacs/top/")
 	parser.add_argument("--force-field", "-f", help="specifies the force field from the list: oplsaa, amber94, amber96, amber99, amber99sb, amber99sb-ildn, ambergs (default OPLS-AA).", default="oplsaa")
+	parser.add_argument("--save-fragments", "-s", help="save the fragment configurations in .xyz.", action="store_true")
 	parser.add_argument("--flexible-fragments", help="if you will perform a simulation with flexible fragments use this option to have a complete .dfr with all the parameters.", action="store_true")
 	parser.add_argument("--eq-from-geom", "-g", help="get the equilibrium values for bonds and angles from geometry instead of force field values.", action="store_true")
 
@@ -562,4 +566,4 @@ if __name__ == '__main__':
 		FFPATH = os.path.join(args.gromacs_ff_path,ffname+".ff")
 
 	# convert the file
-	top2dfr(args.topfile, args.geomfile, args.flexible_fragments, args.eq_from_geom, ffname, FFPATH)
+	top2dfr(args.topfile, args.geomfile, args.flexible_fragments, args.eq_from_geom, args.save_fragments, ffname, FFPATH)
