@@ -22,7 +22,19 @@ def nm2a(num):
 def j2cal(num):
 	return round(num/4.184, 3)
 
+def check_gromacs_path(path):
+	if (not os.path.isdir(path)):
+		print("GROMACS top directory is invalid (%s)" % (path))
+		sys.exit(0)
+
+	flist = os.listdir(FFPATH)
+	if ("ffbonded.itp" not in flist) or ("ffnonbonded.itp" not in flist):
+		print("Either ffbonded.itp or ffnonbonded.itp are missing in the force field directory")
+		sys.exit(0)
+
 def lookup_ljparam(atype, path, dict_types=[]):
+	check_gromacs_path(path)
+
 	with open(os.path.join(path,"ffnonbonded.itp")) as f:
 		for line in f:
 			if line.strip().startswith(";") or line.strip().startswith("#") or len(line.strip()) == 0:
@@ -39,6 +51,8 @@ def lookup_ljparam_ifile(atype, alist):
 	return
 
 def lookup_ffbond(t1, t2, path):
+	check_gromacs_path(path)
+
 	with open(os.path.join(path,"ffbonded.itp")) as f:
 		while True:
 			line = f.readline()
@@ -61,6 +75,8 @@ def lookup_ffbond(t1, t2, path):
 	return "not found"
 
 def lookup_ffangle(t1, t2, t3, path):
+	check_gromacs_path(path)
+
 	with open(os.path.join(path,"ffbonded.itp")) as f:
 		while True:
 			line = f.readline()
@@ -83,6 +99,8 @@ def lookup_ffangle(t1, t2, t3, path):
 	return "not found"
 
 def lookup_ffimproper(itype, path):
+	check_gromacs_path(path)
+
 	with open(os.path.join(path,"ffbonded.itp")) as f:
 		for line in f:
 			if itype in line:
@@ -91,6 +109,8 @@ def lookup_ffimproper(itype, path):
 	sys.exit(0)
 
 def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
+	check_gromacs_path(path)
+
 	fpos = []
 	fnd_lines = []
 
@@ -526,11 +546,7 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 
-	# check input information
-	if (not os.path.isdir(args.gromacs_ff_path)):
-		print("GROMACS top directory is not a directory (%s)" % (args.gromacs_ff_path))
-		sys.exit()
-
+	# check input consistency
 	obabel_sup = ["gro", "acr", "adf", "adfout", "alc", "arc", "bgf", "box", "bs", "c3d1", "c3d2", "cac", "caccrt", "cache", "cacint", "can", "car", "ccc", "cdx", "cdxml", "cht", "cif", "ck", "cml", "cmlr", "com", "copy", "crk2d", "crk3d", "csr", "cssr", "ct", "cub", "cube", "dmol", "dx", "ent", "fa", "fasta", "fch", "fchk", "fck", "feat", "fh", "fix", "fpt", "fract", "fs", "fsa", "g03", "g92", "g94", "g98", "gal", "gam", "gamin", "gamout", "gau", "gjc", "gjf", "gpr", "gr96", "gukin", "gukout", "gzmat", "hin", "inchi", "inp", "ins", "jin", "jout", "mcdl", "mcif", "mdl", "ml2", "mmcif", "mmd", "mmod", "mol", "mol2", "molden", "molreport", "moo", "mop", "mopcrt", "mopin", "mopout", "mpc", "mpd", "mpqc", "mpqcin", "msi", "msms", "nw", "nwo", "outmol", "pc", "pcm", "pdb", "png", "pov", "pqr", "pqs", "prep", "qcin", "qcout", "report", "res", "rsmi", "rxn", "sd", "sdf", "smi", "smiles", "sy2", "t41", "tdd", "test", "therm", "tmol", "txt", "txyz", "unixyz", "vmol", "xed", "xml", "xyz", "yob", "zin"]
 	geomfile = os.path.realpath(args.geomfile)
 	base, ext = os.path.splitext(geomfile)
@@ -544,14 +560,6 @@ if __name__ == '__main__':
 	else:
 		ffname = args.force_field.lower()
 		FFPATH = os.path.join(args.gromacs_ff_path,ffname+".ff")
-		if (not os.path.isdir(FFPATH)):
-			print("Force field directory not found (%s)" % (FFPATH))
-			sys.exit(0)
-	
-		flist = os.listdir(FFPATH)
-		if ("ffbonded.itp" not in flist) or ("ffnonbonded.itp" not in flist):
-			print("Either ffbonded.itp or ffnonbonded.itp are missing in the force field directory")
-			sys.exit(0)
 
 	# convert the file
 	top2dfr(args.topfile, args.geomfile, args.flexible_fragments, args.eq_from_geom, ffname, FFPATH)
