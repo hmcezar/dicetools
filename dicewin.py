@@ -510,6 +510,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
     Create a window that allows the user to select the file which will be read. Return the data read and file name information.
     """
     openFile = QtWidgets.QFileDialog()
+    openFile.setDirectory(os.getcwd())
     openFile.setFileMode(QtWidgets.QFileDialog.ExistingFile)
     openFile.setViewMode(0)
     selectedFileName = openFile.getOpenFileName()[0]
@@ -1602,7 +1603,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
     Write the values and information from the dictionary canvasInfo to a dat file. 
     """
     try:
-      root = os.getenv('HOME')
+      root = os.getcwd()
       timetag = time.strftime('%Y%m%d%H%M%S')
       fname = self.filename.split('/')[-1]
       title = ((self.canvasInfo['title']).replace('/', '')).replace('_', '')
