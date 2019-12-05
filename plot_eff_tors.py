@@ -567,6 +567,7 @@ if __name__ == '__main__':
   fdihed = base+"_torsion.pdf"
   fnb = base+"_nonbonded.pdf"
   ftotal = base+"_total.pdf"
+  fdip = base+"_dipole.pdf"
 
   command = ""
   for i in range(len(sys.argv)):
@@ -667,5 +668,18 @@ if __name__ == '__main__':
   else:
     plt.xlim([-180,180])
     plt.xticks([-180,-120,-60,0,60,120,180])
-  plt.ylabel(r"Nonbonded and dihedral energy (kcal/mol)")    
+  plt.ylabel(r"Potential energy (kcal/mol)")    
   plt.savefig(ftotal, bbox_inches='tight')
+  plt.gcf().clear()
+
+  # plot the dipole moments
+  plt.plot(osphi,osdip)
+  plt.xlabel(r"$\phi$ ($^\circ$)")
+  if (args.shiftangles):
+    plt.xlim([0.,360.])
+    plt.xticks([0,60,120,180,240,300,360])
+  else:
+    plt.xlim([-180,180])
+    plt.xticks([-180,-120,-60,0,60,120,180])
+  plt.ylabel(r"$\mu$ (Debye)")    
+  plt.savefig(fdip, bbox_inches='tight')
