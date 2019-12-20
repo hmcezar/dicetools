@@ -222,7 +222,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 def strip_comment(string, token=';'):
 	return string.split(token)[0].strip()
 
-def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, ffname, path):
+def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, path):
 	if "amber" in ffname:
 		potname = "AMBER"
 	else:
@@ -309,7 +309,7 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, ffname, path):
 		atoms[atomlbl].append(str(y))
 		atoms[atomlbl].append(str(z))
 		if ("amber" in ffname) or fromatomtype:
-			if float(line.split()[6]) != 0.0:
+			if topcharges:
 				atoms[atomlbl].append(line.split()[6])
 			else:
 				atoms[atomlbl].append(ffline.split()[3])
@@ -321,7 +321,7 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, ffname, path):
 			else:
 				atoms[atomlbl].append(ffline.split()[0])
 		else:
-			if float(line.split()[6]) != 0.0:
+			if topcharges:
 				atoms[atomlbl].append(line.split()[6])
 			else:
 				atoms[atomlbl].append(ffline.split()[4])
@@ -547,6 +547,7 @@ if __name__ == '__main__':
 	parser.add_argument("--save-fragments", "-s", help="save the fragment configurations in .xyz.", action="store_true")
 	parser.add_argument("--flexible-fragments", help="if you will perform a simulation with flexible fragments use this option to have a complete .dfr with all the parameters.", action="store_true")
 	parser.add_argument("--eq-from-geom", "-g", help="get the equilibrium values for bonds and angles from geometry instead of force field values.", action="store_true")
+	parser.add_argument("--charges-from-topology", "-c", help="Use the charges from the topology file instead of the force field file.", action="store_true")
 
 	args = parser.parse_args()
 
@@ -565,5 +566,10 @@ if __name__ == '__main__':
 		ffname = args.force_field.lower()
 		FFPATH = os.path.join(args.gromacs_ff_path,ffname+".ff")
 
+	# raise warning concerning the charges
+	if not args.charges_from_topology:
+		print("\n!!!! ATTENTION!: using charges from the force field (GROMACS path)                                 !!!!")
+		print('!!!! If you wish to use the charges from your topology, use the "--charges-from-topology" option.  !!!!\n')
+
 	# convert the file
-	top2dfr(args.topfile, args.geomfile, args.flexible_fragments, args.eq_from_geom, args.save_fragments, ffname, FFPATH)
+	top2dfr(args.topfile, args.geomfile, args.flexible_fragments, args.eq_from_geom, args.save_fragments, args.charges_from_topology, ffname, FFPATH)
