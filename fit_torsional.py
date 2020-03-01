@@ -207,6 +207,7 @@ if __name__ == '__main__':
   parser.add_argument("--tolerance-dihedral", type=float, help="tolarance value for which dihedral angles are considered to be equal (default = 0.1 radians)", default=0.1)
   parser.add_argument("--bound-values", type=float, help="upper and lower bound [-val,+val] for the fitted parameters (default = 5)", default=5.)
   parser.add_argument("--cut-energy", type=float, help="the percentage of highest energies that should not be considered during the fit (default = 0.3)", default=0.3)
+  parser.add_argument("--cut-from-total", help="instead of cutting the high torsional energies from fit, cut the high total energies", action="store_true")
   args = parser.parse_args()
 
   if args.force_surroundings and args.no_force_min:
@@ -302,9 +303,14 @@ if __name__ == '__main__':
 
   # order and remove the points relative to the transition states
   npremove = ceil(args.cut_energy*len(died))
-  lowenremove = -np.sort(-enfit)[npremove-1]
-  filtbar = np.where(enfit >= lowenremove)
-  filtxc = np.where(ffit(xc) >= lowenremove)
+  if args.cut_from_total:
+    lowenremove = -np.sort(-enqm)[npremove-1]
+    filtbar = np.where(enqm >= lowenremove)
+    filtxc = np.where(f(xc) >= lowenremove)
+  else:
+    lowenremove = -np.sort(-enfit)[npremove-1]
+    filtbar = np.where(enfit >= lowenremove)
+    filtxc = np.where(ffit(xc) >= lowenremove)
 
   olddied = died.copy()
   oldenfit = enfit.copy()
@@ -376,9 +382,19 @@ if __name__ == '__main__':
       weights[idx_min] = 1./args.weight_minimums
       
     if equals:
-      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, *vs, *f0s, equals), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      try:
+        popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func_equals(x, *vs, *f0s, equals), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      except Exception as e:
+        print("Problem while fitting the curve (%s)" % (str(e)))
+        print("If the problem is 'x0 is infeasible' use --bound-values to set a higher value")
+        sys.exit(0)
     else:
-      popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      try:
+        popt, pcov = optimize.curve_fit(lambda x, *vs: fit_func(x, *vs, *f0s), xcfit, ffit(xcfit), p0=v0s, bounds=(lbound,ubound), sigma=weights)
+      except Exception as e:
+        print("Problem while fitting the curve (%s)" % (str(e)))
+        print("If the problem is 'x0 is infeasible' use --bound-values to set a higher value")
+        sys.exit(0)
 
   if equals:
     new_popt = []
