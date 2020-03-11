@@ -267,6 +267,11 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, 
 						print("You have a line (%s) of data before assigning a type of entry (such as [ atoms ], [ bonds ] ...)" % (line))
 						sys.exit(0)
 
+	# check if atoms were found
+	if "[ atoms ]" not in tdata:
+		print("The [ atoms ] section was not found in your topology, make sure you're using a single file without #include")
+		sys.exit(0)
+
 	# get the atoms and its positions and parameters in a dictionary
 	atoms = OrderedDict()
 	rdfs = {}
@@ -312,9 +317,9 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, 
 			if topcharges:
 				atoms[atomlbl].append(line.split()[6])
 			else:
-				atoms[atomlbl].append(ffline.split()[3])
-			atoms[atomlbl].append(str(j2cal(float(ffline.split()[6]))))
-			atoms[atomlbl].append(str(nm2a(float(ffline.split()[5]))))
+				atoms[atomlbl].append(ffline.split()[-4])
+			atoms[atomlbl].append(str(j2cal(float(ffline.split()[-1]))))
+			atoms[atomlbl].append(str(nm2a(float(ffline.split()[-2]))))
 			# the last one will not be printed but is needed to retrieve the force constants
 			if ("[ atomtypes ]" in tdata) and ("opls" in ffname):
 				atoms[atomlbl].append(ffline.split()[1])
