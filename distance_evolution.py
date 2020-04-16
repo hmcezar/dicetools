@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Receives a .xyz and two atom numbers to compute the distance between the two points and plot
 a temporal evolution.

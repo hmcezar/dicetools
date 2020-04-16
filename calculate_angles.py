@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Given the filename of batch of several xyz molecules, compute the angles
 between a1-a2-a3 (provided by the user) and print them in stdout.

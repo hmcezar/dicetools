@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 From a file containing the molecules, e.g., from get_solute_xyz.py, and from the .txt
 containing the charges for each atom, calculat the dipole moment and print to screen.

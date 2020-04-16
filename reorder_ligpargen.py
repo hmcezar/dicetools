@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Receives original .pdb submitted to LigParGen and the output of LigParGen (.gro and .itp)
 to reorder the output to be in the same order of the original input

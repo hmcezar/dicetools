@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Receives a '.dat' file containing dihedrals to plot them across a step axis.
 

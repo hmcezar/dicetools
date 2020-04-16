@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Given a file with raw data (a number per line), search for
 values in the interval [minval, maxval] and give the probability

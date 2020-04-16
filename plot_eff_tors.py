@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Receives a DICE ".txt" and a DICE ".dfr" to calculate the energy with a dihedral specified by the reference atoms a1 a2 a3 a4.
 

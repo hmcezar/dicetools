@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Give the filename of a DICE .xyz and number of atoms in the solvent to receive
 in stdout the xyz of the solvent for every configuration in the initial file.

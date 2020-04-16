@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Given the filename a xyz trajectory and the interval between each save,
 print a box configuration.

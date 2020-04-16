@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Given the filename of a DICE xyz trajectory and a number of a configuration
 returns the configuration.

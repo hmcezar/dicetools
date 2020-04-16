@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Script used to convert the DICE inputs .dfr and .txt to a GROMACS topology .itp and a .gro.
 

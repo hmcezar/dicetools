@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Receives a molecular configuration file and create a ".dfr" (Dice FRagment) and ".txt" DICE input files.
 The ".txt" contains the atoms (species, xyz coordinates and place for lj params) and the ".dfr" contains the fragment connections and force field parameters.

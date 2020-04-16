@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Script used to convert a GROMACS topology file and geometry to the DICE .dfr and .txt files.
 

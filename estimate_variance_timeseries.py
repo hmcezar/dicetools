@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Receives a .dat file contaning a temporal series and calculate the probability
 of getting values in a interval for each window of the whole set.

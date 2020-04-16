@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Give the filename of data file to plot a curve of the angular distribution of the data.
 This is generated from a histogram, from which the number of bins can be passed as an optional argument.

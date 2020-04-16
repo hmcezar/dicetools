@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Receives a .dat containing a set of dihedral angles and plot U_xs and U1_intra
 vs. these dihedrals.
