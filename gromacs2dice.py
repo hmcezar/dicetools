@@ -47,7 +47,7 @@ def lookup_ljparam(atype, path, dict_types=[]):
 
 def lookup_ljparam_ifile(atype, alist):
 	for line in alist:
-		if atype in line:
+		if atype == line.split()[0]:
 			return line
 	return
 
