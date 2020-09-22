@@ -30,6 +30,8 @@ conda install sip
 conda install pyqt=5
 ```
 
+If you have any problem with the scripts that plots data with matplotlib, you may need to install the package `cm-super` which contains some of the LaTeX libraries needed for the correct rendering of LaTeX with matplotlib.
+
 ## Short description of tools
 All the scripts can be run with the `-h` option to show a brief description of what the script does and the mandatory and optional parameters.
 
