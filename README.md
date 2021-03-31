@@ -13,7 +13,7 @@ You can install these dependencies in any way you want, however, we encourage th
 To install the libraries with Anaconda, do the following:
 ```
 conda install numpy
-conda install -c openbabel openbabel
+conda install -c conda-forge openbabel
 conda install matplotlib
 pip install rmsd
 ```

@@ -11,8 +11,12 @@ import argparse
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
-import pybel
-import openbabel
+try: 
+  import pybel
+  import openbabel
+except:
+  from openbabel import pybel
+  from openbabel import openbabel
 import os
 from distutils.spawn import find_executable
 

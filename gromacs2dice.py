@@ -11,8 +11,14 @@ import sys
 import argparse
 import tempfile
 import shutil
-import openbabel
-import pybel
+try: 
+  import pybel
+  import openbabel
+  ob3 = False
+except:
+  from openbabel import pybel
+  from openbabel import openbabel
+  ob3 = True
 from collections import OrderedDict
 from fragGen import generate_fragfile
 from clean_dof_dfr import clean_dofs
@@ -231,11 +237,15 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, 
 
 	# get the atomic positions from the geometry file
 	base, ext = os.path.splitext(geomfile)
-	etab = openbabel.OBElementTable()
+	if not ob3:
+		etab = openbabel.OBElementTable()
 	mol = pybel.readfile(ext[1:],geomfile).__next__()
 	molxyzinfo = {}
 	for i, atom in enumerate(mol,1):
-		molxyzinfo[i] = [etab.GetSymbol(atom.atomicnum),atom.coords]
+		if ob3:
+			molxyzinfo[i] = [openbabel.GetSymbol(atom.atomicnum),atom.coords]
+		else:
+			molxyzinfo[i] = [etab.GetSymbol(atom.atomicnum),atom.coords]
 
 	# first pass through the topology file to get the data into a dictionary
 	tdata = {}

@@ -12,8 +12,12 @@ import numpy as np
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
-import openbabel
-import pybel
+try: 
+  import pybel
+  import openbabel
+except:
+  from openbabel import pybel
+  from openbabel import openbabel
 from numpy import cos
 from math import ceil
 from scipy import optimize

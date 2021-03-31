@@ -9,7 +9,10 @@ Date: NOV/2016
 
 import argparse
 import numpy as np
-import pybel
+try:
+  import pybel
+except:
+  from openbabel import pybel
 
 def eA_to_D(val):
   return val/0.20819434

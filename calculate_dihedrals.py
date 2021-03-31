@@ -9,8 +9,12 @@ Date: JUL/2016
 
 import argparse
 import sys
-import pybel
-import openbabel
+try: 
+  import pybel
+  import openbabel
+except:
+  from openbabel import pybel
+  from openbabel import openbabel
 import os
 
 def get_dihedrals(fname, a1, a2, a3, a4):

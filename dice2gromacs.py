@@ -10,8 +10,14 @@ import os
 import sys
 import argparse
 import tempfile
-import openbabel
-import pybel
+try: 
+  import pybel
+  import openbabel
+  ob3 = False
+except:
+  from openbabel import pybel
+  from openbabel import openbabel
+  ob3 = True
 from math import sqrt
 try:
   from Queue import Queue
@@ -148,7 +154,8 @@ def read_txt_to_mol(txtfile):
   fd, temp_path = tempfile.mkstemp(suffix=".xyz")
   fxyz = os.fdopen(fd,'w')
   # table to convert atomic number to symbols
-  etab = openbabel.OBElementTable()
+  if not ob3:
+    etab = openbabel.OBElementTable()
   
   with open(txtfile, 'r') as f:
     line = f.readline()
@@ -170,7 +177,10 @@ def read_txt_to_mol(txtfile):
       line = f.readline()
       atnum = int(line.split()[1])
       x, y, z = [float(x) for x in line.split()[2:5]]
-      fxyz.write("%s\t%f\t%f\t%f\n" % (etab.GetSymbol(atnum), x, y, z))
+      if ob3:
+        fxyz.write("%s\t%f\t%f\t%f\n" % (openbabel.GetSymbol(atnum), x, y, z))
+      else:
+        fxyz.write("%s\t%f\t%f\t%f\n" % (etab.GetSymbol(atnum), x, y, z))
 
       # store the parameters
       qv, epsv, sigv = [float(x) for x in line.split()[5:]]
@@ -263,7 +273,8 @@ def read_parameters(dfrfile, txtfile):
 
 def itp_from_params(mol, q, eps, sig, dfrBonds, dfrAngles, dfrDihedrals, dfrImpDih):
   # table to convert atomic number to symbols
-  etab = openbabel.OBElementTable()
+  if not ob3:
+    etab = openbabel.OBElementTable()
 
   # !!! units are converted as the reverse of: http://chembytes.wikidot.com/oplsaagro2tnk and based on GROMACS manual
 
@@ -278,7 +289,11 @@ def itp_from_params(mol, q, eps, sig, dfrBonds, dfrAngles, dfrDihedrals, dfrImpD
 """
   # write the atomtypes
   for i, atom in enumerate(mol.atoms):
-    fcontent += "att_%03d   %s%03d   %7.4f   0.000    A    %.5e    %.5e\n" % (i+1, etab.GetSymbol(atom.atomicnum), i+1, atom.atomicmass, a2nm(sig[i]), cal2j(eps[i]))
+    if ob3:
+      fcontent += "att_%03d   %s%03d   %7.4f   0.000    A    %.5e    %.5e\n" % (i+1, openbabel.GetSymbol(atom.atomicnum), i+1, atom.atomicmass, a2nm(sig[i]), cal2j(eps[i]))
+    else:
+      fcontent += "att_%03d   %s%03d   %7.4f   0.000    A    %.5e    %.5e\n" % (i+1, etab.GetSymbol(atom.atomicnum), i+1, atom.atomicmass, a2nm(sig[i]), cal2j(eps[i]))
+
 
   fcontent += """
 [ moleculetype ]
@@ -291,7 +306,10 @@ UNL              3
 
   # write the atoms
   for i, atom in enumerate(mol.atoms):
-    fcontent += "%6d   att_%03d   1   UNL    %s%03d   1    %.4f   %7.4f\n" % (i+1, i+1, etab.GetSymbol(atom.atomicnum), i+1, q[i], atom.atomicmass)
+    if ob3:
+      fcontent += "%6d   att_%03d   1   UNL    %s%03d   1    %.4f   %7.4f\n" % (i+1, i+1, openbabel.GetSymbol(atom.atomicnum), i+1, q[i], atom.atomicmass)
+    else:
+      fcontent += "%6d   att_%03d   1   UNL    %s%03d   1    %.4f   %7.4f\n" % (i+1, i+1, etab.GetSymbol(atom.atomicnum), i+1, q[i], atom.atomicmass)
 
   # write the bonds
   fcontent += """

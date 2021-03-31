@@ -7,8 +7,12 @@ Author: Henrique Musseli Cezar
 Date: JUN/2015
 """
 
-import openbabel
-import pybel
+try: 
+  import pybel
+  import openbabel
+except:
+  from openbabel import pybel
+  from openbabel import openbabel
 import os
 import argparse
 import sys

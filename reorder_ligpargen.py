@@ -9,20 +9,30 @@ Date: MAY/2019
 
 import os
 import argparse
-import pybel
-import openbabel
+try: 
+  import pybel
+  import openbabel
+  ob3 = False
+except:
+  from openbabel import pybel
+  from openbabel import openbabel
+  ob3 = True
 import rmsd
 import numpy as np
 import re
 
 def get_mol_info(mol):
   # table to convert atomic number to symbols
-  etab = openbabel.OBElementTable()
+  if not ob3:
+    etab = openbabel.OBElementTable()
 
   q_atoms = []
   q_all = []
   for atom in mol:
-    q_atoms.append(etab.GetSymbol(atom.atomicnum))
+    if ob3:
+      q_atoms.append(openbabel.GetSymbol(atom.atomicnum))
+    else:
+      q_atoms.append(etab.GetSymbol(atom.atomicnum))
     q_all.append(atom.coords)
 
   return np.asarray(q_atoms), np.asarray(q_all)  
