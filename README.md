@@ -22,12 +22,14 @@ If you want to use the graphical interface of DiceWin to perform some analysis, 
 - [SciPy](https://www.scipy.org/) 
 - [SIP](https://pypi.org/project/SIP/)
 - [PyQt5](https://riverbankcomputing.com/software/pyqt/intro)
+- [Pandas](https://pandas.pydata.org/)
 
 that can also be easily installed with conda with
 ```
 conda install scipy
 conda install sip
 conda install pyqt=5
+conda install -c anaconda pandas
 ```
 
 If you have any problem with the scripts that plots data with matplotlib, you may need to install the package `cm-super` which contains some of the LaTeX libraries needed for the correct rendering of LaTeX with matplotlib.
@@ -115,10 +117,10 @@ Two plots are generated: one that associates each dihedral angle to an intra mol
 A fourth optional argument of the script is the number of bins used to the second plot (default = 36, meaning each bin is 10 degrees wide).
 
 ## Authorship
-Most of the scripts here were written by Henrique Musseli Cezar, with the exception of DiceWin which was written by Thiago de Souza Duarte.
+Most of the scripts here were written by Henrique Musseli Cezar, with the exception of DiceWin which was written by Thiago de Souza Duarte and Emanuel Fernandes Dias Mancio.
 These tools were written with the important contribution of Prof. Kaline Coutinho, who supervised the work and gave suggestions to the improvement of the tools.
 
 
 ## Acknowledgments
-We thank the Brazilian funding agencies [CNPq](http://www.cnpq.br/) and [CAPES](http://www.capes.gov.br/) for the fellowships and the approved research projects.
-Most of this work was done under a CNPq PhD fellowship for Henrique Musseli Cezar (grant number 140489/2015-0) and undergraduate research fellowships for Thiago de Souza Duarte.
+We thank the Brazilian funding agencies [CNPq](http://www.cnpq.br/), [CAPES](http://www.capes.gov.br/) and [FAPESP](https://fapesp.br/) for the fellowships and the approved research projects.
+Most of this work was done under a CNPq PhD fellowship for Henrique Musseli Cezar (grant number 140489/2015-0) and undergraduate research fellowships for Thiago de Souza Duarte. And a FAPESP undergratuate fellowship for Emanuel Fernandes Dias Mancio.
