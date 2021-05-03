@@ -15,6 +15,7 @@ from scipy.odr import ODR, Model, RealData
 from array import array
 from pandas import DataFrame, concat
 
+matplotlib.rcParams['agg.path.chunksize'] = 100000
 
 class mplCustomizedToolbar(NavigationToolbar):
   """
