@@ -23,7 +23,7 @@ class mplCustomizedToolbar(NavigationToolbar):
   """
   toolitems = [
       t for t in NavigationToolbar.toolitems
-      if t[0] in ('Home', 'Pan', 'Zoom', 'Save', "Customize")
+      if t[0] in ('Home', 'Pan', 'Zoom', 'Save')
   ]
 
   def __init__(self, *args, **kwargs):
@@ -199,7 +199,8 @@ class graphMainWindow(QtWidgets.QMainWindow):
     self.canvas = MplCanvas()
     self.cid = self.canvas.fig.canvas.mpl_connect('button_press_event',
                                                   self.clickIntegral)
-    self.mpl_toolbar = mplCustomizedToolbar(self.canvas, self.graphxyFrame)
+    # self.mpl_toolbar = mplCustomizedToolbar(self.canvas, self.graphxyFrame)
+    self.mpl_toolbar = NavigationToolbar(self.canvas, self.graphxyFrame)
 
     self.checkOverplot = QtWidgets.QCheckBox('Overplot')
 
@@ -438,14 +439,14 @@ class graphMainWindow(QtWidgets.QMainWindow):
 
     ## canvas frame
     self.boxGraph = QtWidgets.QGridLayout()
-    self.boxGraph.addWidget(self.mpl_toolbar, 0, 0, 1, 3)
+    self.boxGraph.addWidget(self.mpl_toolbar, 0, 0, 1, 4)
     # self.boxGraph.addWidget(self.coordsText, 0, 2, 1, 1, QtCore.Qt.AlignRight)
-    self.boxGraph.addWidget(self.horizontalLine, 1, 0, 1, 3)
-    self.boxGraph.addWidget(self.canvas, 2, 0, 1, 3)
+    self.boxGraph.addWidget(self.horizontalLine, 1, 0, 1, 4)
+    self.boxGraph.addWidget(self.canvas, 2, 0, 1, 4)
     self.boxGraph.addWidget(self.checkOverplot, 3, 0, 1, 1)
     self.boxGraph.addWidget(self.buttonViewAll, 3, 2, 1, 1,
                             QtCore.Qt.AlignRight)
-    self.boxGraph.addWidget(self.widgetAxesIntervals, 6, 0, 1, 3)
+    self.boxGraph.addWidget(self.widgetAxesIntervals, 6, 0, 1, 4)
     self.boxGraph.setColumnStretch(0, 2)
     self.boxGraph.setColumnStretch(1, 1)
     self.boxGraph.setColumnStretch(2, 2)
