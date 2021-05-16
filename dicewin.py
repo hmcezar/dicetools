@@ -4,6 +4,7 @@
 import sys
 import os
 import time
+import re
 import numpy as np
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -688,6 +689,38 @@ class graphMainWindow(QtWidgets.QMainWindow):
             blocks.append(data)
 
           data = concat(blocks, axis=1, keys=[c for c in range(1, count + 1)])
+
+      elif extension == "xvg":
+        with open(selectedFileName, 'rt') as f:
+          labels = ['x']
+          for line in f:
+            if '#' in line:
+              pass
+            elif '@' in line:
+              if (re.search(r's\d', line) != None) and ("legend" in line):
+                labels.append(re.search(r'"(.*?)"', line).group()[1:-1])
+            else:
+              initval = line.split()
+              break
+
+          if len(labels) == 1:
+            val_qt = len(initval)
+            for i in range(val_qt-1):
+              labels.append("y{}".format(i))
+
+          data = {lab: array('f') for lab in labels}
+          enum = list(enumerate(labels))
+          
+          for i, lab in enum:
+            data[lab].append(float(initval[i]))
+
+          for line in f:
+            values = line.split()
+            if len(values) == len(labels): # pass empty or incomplete lines
+              for i, lab in enum:
+                data[lab].append(float(values[i]))
+
+          data = DataFrame(data)
 
       # *.avr and generic files
       else:
