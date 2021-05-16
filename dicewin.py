@@ -33,7 +33,7 @@ class mplCustomizedToolbar(NavigationToolbar):
 
 class MplCanvas(FigureCanvas):
 
-  def __init__(self, parent=None, width=8, height=5.5, dpi=72):
+  def __init__(self, parent=None, width=8.5, height=5.5, dpi=72):
     self.fig = Figure(figsize=(width, height), dpi=dpi)
     self.axes = self.fig.add_axes([0.075, 0.075, 0.85, 0.85],
                                   facecolor='w',
@@ -957,7 +957,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
 
       if (self.extension
           == 'gr') and (self.canvasInfo['type'] != 'autocorrelation'):
-        self.canvas.axes.set_position([0.05, 0.075, 0.7, 0.85])
+        self.canvas.axes.set_position([0.075, 0.075, 0.7, 0.85])
       else:
         self.canvas.axes.set_position([0.075, 0.075, 0.85, 0.85])
 
