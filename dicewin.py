@@ -639,7 +639,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
           data = {lab: array('f') for lab in labels}
           for line in f:
             try:
-              line_values = line[29:].split()
+              line_values = [line[29:35],line[35:42],line[42:51],line[51:60],line[60:69],line[69:78],line[78:87],line[87:96],line[96:]]
               for i, key in enumerate(data):
                 data[key].append(float(line_values[i]))
             except:
