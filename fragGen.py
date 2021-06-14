@@ -7,10 +7,12 @@ Author: Henrique Musseli Cezar
 Date: JUN/2015
 """
 
-try: 
+try:
+  ob3 = False
   import pybel
   import openbabel
 except:
+  ob3 = True
   from openbabel import pybel
   from openbabel import openbabel
 import os
@@ -341,7 +343,11 @@ def generate_fragfile(filename, outtype, ffparams=None, eqgeom=False):
       for atom in atomIterator:
         # print(atom.GetHyb(), atom.GetAtomicNum(), atom.GetValence())
         # if atom.GetAtomicNum() == 6 and atom.GetValence() == 3:
-        if atom.GetHyb() == 2 and atom.GetValence() == 3:
+        if ob3 == False:
+          condImp = atom.GetHyb() == 2 and atom.GetValence() == 3
+        else:
+          condImp = atom.GetHyb() == 2 and atom.GetExplicitDegree() == 3
+        if condImp:
           bondIterator = atom.BeginBonds()
           nbrAtom = atom.BeginNbrAtom(bondIterator)
           connectedAtoms = []
