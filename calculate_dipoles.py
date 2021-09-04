@@ -28,19 +28,18 @@ def get_dipole_moments(xyzfile, txtfile):
       line = f.readline()
       charges[i] = float(line.split()[5])
 
-  with open('dipole.dat', 'w'):
-      # for every configuration calculate the dipole moment
-      for mol in pybel.readfile("xyz", xyzfile):
-          mol.OBMol.Center()
-          tdip = np.zeros(3)
-          for i, atom in enumerate(mol):
-              # get dipole
-              dipole = [charges[i] * x for x in atom.coords]
-              # sum the dipoles
-              tdip = np.add(tdip, dipole)
-          # print to screen and file
-          print("%f" % np.linalg.norm(eA_to_D(tdip)))
-          print(f"{np.linalg.norm(eA_to_D(tdip))}", end='\n', file=f)
+  # for every configuration calculate the dipole moment
+  for mol in pybel.readfile("xyz", xyzfile):
+    mol.OBMol.Center()
+    tdip = np.zeros(3)
+    for i, atom in enumerate(mol):
+      # get dipole
+      dipole = [charges[i] * x for x in atom.coords]
+      # sum the dipoles
+      tdip = np.add(tdip, dipole)
+
+    # print to screen
+    print("%f" % np.linalg.norm(eA_to_D(tdip)))
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Receives an .xyz file containing molecular configurations and a .txt of the DICE input with charges to calculate the dipole moments.")
@@ -52,3 +51,4 @@ if __name__ == '__main__':
   txtfile = args.txtfile
 
   get_dipole_moments(xyzfile, txtfile)
+
