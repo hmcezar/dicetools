@@ -15,7 +15,6 @@ def get_solute(fname, natoms):
 		print_atoms = False
 		printed = 0
 		line = f.readline()
-		sys.stdout = open('new_traj_solute.xyz', 'w')
 		while line:
 			if "Configuration" in line:
 				print_atoms = True
@@ -28,9 +27,6 @@ def get_solute(fname, natoms):
 				printed = 0
 
 			line = f.readline()
-		sys.stdout.close()
-        
-
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Receives simulation boxes and returns the solute conformation for each box.")
