@@ -9,7 +9,7 @@ Date: JUL/2016
 
 import argparse
 import sys
-try:
+try: 
   import pybel
   import openbabel
 except:
@@ -18,11 +18,10 @@ except:
 import os
 
 def get_dihedrals(fname, a1, a2, a3, a4):
-	# read and write all the molecules from file
-    with open('dihedral.dat', 'w') as f:
-        for mol in pybel.readfile(os.path.splitext(fname)[1][1:], fname):
-            print("%f" % mol.OBMol.GetTorsion(a1,a2,a3,a4))
-            print(f'{mol.OBMol.GetTorsion(a1,a2,a3,a4)}', end='\n', file=f)
+	# read all the molecules from file
+	for mol in pybel.readfile(os.path.splitext(fname)[1][1:], fname):
+		print("%f" % mol.OBMol.GetTorsion(a1,a2,a3,a4))
+
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description="Receives a file with several xyz molecules and compute the desired torsional angle for each one of them.")
