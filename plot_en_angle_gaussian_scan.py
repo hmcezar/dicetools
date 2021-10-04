@@ -39,7 +39,7 @@ def parse_en_log_gaussian(fname):
         ener.append(en)
       elif mp2 and "EUMP2" in line:
         en = float(line.split()[5].replace("D","E"))*627.509
-        died.append(float(angle))
+        died.append(float(angle.split()[0]))
         ener.append(en)
 
   return sorted(died), [x for _,x in sorted(zip(died,ener))]
