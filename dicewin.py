@@ -606,7 +606,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
               break
 
           if i != sim_len:
-            self.status.showMessage("This simulation didn't finished")
+            self.status.showMessage("This simulation didn't finish")
 
         data = DataFrame(data)
         data["NMOVE"] = np.arange(1, sim_len + 2, dtype=np.uint32)
