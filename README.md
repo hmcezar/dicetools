@@ -89,6 +89,9 @@ Beware though that you **MUST** check your topology when using these tools, spec
 Depending on the type of molecule, it is not unusual for these tools to get some dihedral energies VERY wrong, and it is your job to identify and correct them.
 To check the dihedrals, you can use, e.g., the plot_eff_tors.py script.
 
+### pdb2xyz.py
+Receives a GROMACS generate pdb trajectory build with gmx trjconv, a DICE topology file (.txt) and the quantity of molecules by type separated by spaces. The script converts the trajectory to a DICE trajectory file (.xyz) so that it can be used by the program [order](https://portal.if.usp.br/dice/pt-br/node/333) for analysis. The script can also receive optional arguments to convert only ranges of the input file.
+
 ### plot_eff_tors.py
 The plot_eff_tors is a script to find the rotational barrier between two fragments of a molecule.
 What is does is to divide the molecule in two parts around the chosen rotatable bond, keeping the parts as rigid bodies but rotating one of the sides around the rotatable bond.
@@ -117,7 +120,7 @@ Two plots are generated: one that associates each dihedral angle to an intra mol
 A fourth optional argument of the script is the number of bins used to the second plot (default = 36, meaning each bin is 10 degrees wide).
 
 ## Authorship
-Most of the scripts here were written by Henrique Musseli Cezar, with the exception of DiceWin which was written by Thiago de Souza Duarte and Emanuel Fernandes Dias Mancio.
+Most of the scripts here were written by Henrique Musseli Cezar, with the exception of DiceWin which was written by Thiago de Souza Duarte and Emanuel Fernandes Dias Mancio and pdb2xyz also written by Emanuel Mancio.
 These tools were written with the important contribution of Prof. Kaline Coutinho, who supervised the work and gave suggestions to the improvement of the tools.
 
 
