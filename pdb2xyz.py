@@ -18,7 +18,7 @@ DESCRIPTION = """***************************************************************
 
 Convert GROMACS trajectory file in pdb format to a DICE xyz file format
 
-Last modification: 06/Mar/2021
+Last modification: 06/May/2022
 
 Developed by Emanuel Mancio                
 
@@ -116,7 +116,7 @@ def process_config(pdbfile, xyzfile, natoms, elements, reset_step=False):
     pos_info = "  {0: >2}{1:>-15.5f}{2:>-15.5f}{3:>-15.5f}\n"
 
     for i in range(natoms):
-        pos = list(map(float, (pdbfile.readline().split())[5:8]))
+        pos = list(map(float, (pdbfile.readline()[30:54].split()))) # 30:54 is the range of the coordinates in the pdb file
 
         try:
             xyzfile.write(
