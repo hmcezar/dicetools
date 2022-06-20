@@ -710,7 +710,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
 
           data = {lab: array('f') for lab in labels}
           enum = list(enumerate(labels))
-          
+
           for i, lab in enum:
             data[lab].append(float(initval[i]))
 
@@ -1433,7 +1433,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
   def changeYData(self):
     """
     (None) -> None
-    Update interval entries and datasets when 'data Y' menu has the selected index changed. 
+    Update interval entries and datasets when 'data Y' menu has the selected index changed.
     """
     try:
       if (self.extension == 'gr'):
@@ -1738,7 +1738,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
   def savePlotData(self):
     """
     (None) -> None
-    Write the values and information from the dictionary canvasInfo to a dat file. 
+    Write the values and information from the dictionary canvasInfo to a dat file.
     """
     try:
       root = os.getcwd()
@@ -1876,9 +1876,9 @@ class graphMainWindow(QtWidgets.QMainWindow):
           f.write('# {} = {}\n'.format(
               value, self.canvasInfo['user parameters'][index]))
 
-        r = self.canvasInfo['data'][0]
-        Gr = self.canvasInfo['data'][1]
-        Nr = self.canvasInfo['data'][2]
+        r = self.canvasInfo['data'].iloc[:, 0]
+        Gr = self.canvasInfo['data'].iloc[:, 1]
+        Nr = self.canvasInfo['data'].iloc[:, 2]
         NewGr = self.canvasInfo['user data']
 
         ##print(xmin, xmax, ymin, ymax)
