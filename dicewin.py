@@ -16,7 +16,7 @@ from scipy.odr import ODR, Model, RealData
 from array import array
 from pandas import DataFrame, concat
 
-matplotlib.rcParams['agg.path.chunksize'] = 100000
+matplotlib.rcParams['agg.path.chunksize'] = 100000000
 
 class mplCustomizedToolbar(NavigationToolbar):
   """
@@ -606,7 +606,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
               break
 
           if i != sim_len:
-            self.status.showMessage("This simulation didn't finished")
+            self.status.showMessage("This simulation didn't finish")
 
         data = DataFrame(data)
         data["NMOVE"] = np.arange(1, sim_len + 2, dtype=np.uint32)
@@ -752,7 +752,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
       )
 
       if (self.extension == 'gr'):
-        self.typeGraphMenu = ['line', 'scatter', 'histogram', 'ueff']
+        self.typeGraphMenu = ['scatter', 'line', 'histogram', 'ueff']
         self.default('gr')
         self.widgetGr.show()
         self.widgetAutoCorrEntries.hide()
@@ -761,7 +761,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
         self.fittingLabel.hide()
 
       elif (len(self.eijMenuItems) != 0):
-        self.typeGraphMenu = ['line', 'scatter', 'histogram', 'autocorrelation']
+        self.typeGraphMenu = ['scatter', 'line', 'histogram', 'autocorrelation']
 
         self.eijMenu.setCurrentIndex(0)
         self.default('normal')
@@ -772,7 +772,7 @@ class graphMainWindow(QtWidgets.QMainWindow):
         self.fittingLabel.show()
 
       else:
-        self.typeGraphMenu = ['line', 'scatter', 'histogram', 'autocorrelation']
+        self.typeGraphMenu = ['scatter', 'line', 'histogram', 'autocorrelation']
         self.default('normal')
         self.widgetAutoCorrEntries.show()
         self.widgetGr.hide()
