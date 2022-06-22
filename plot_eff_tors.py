@@ -28,28 +28,28 @@ CT_e = 18.2257
 
 # Dictionary to convert between atomic number and symbols
 atomsymbols = {
-    1:' H', 2:'He', 3:'Li', 4:'Be', 5:' B', 6:' C', 7:' N', 8:' O', 9:' F', 10:'Ne', 11:'Na', 12:'Mg', 
-   13:'Al', 14:'Si', 15:' P', 16:' S', 17:'Cl', 18:'Ar', 19:' K', 20:'Ca', 21:'Sc', 22:'Ti', 23:' V', 
-   24:'Cr', 25:'Mn', 26:'Fe', 27:'Co', 28:'Ni', 29:'Cu', 30:'Zn', 31:'Ga', 32:'Ge', 33:'As', 34:'Se', 
-   35:'Br', 36:'Kr', 37:'Rb', 38:'Sr', 39:' Y', 40:'Zr', 41:'Nb', 42:'Mo', 43:'Tc', 44:'Ru', 45:'Rh', 
-   46:'Pd', 47:'Ag', 48:'Cd', 49:'In', 50:'Sn', 51:'Sb', 52:'Te', 53:' I', 54:'Xe', 55:'Cs', 56:'Ba', 
-   57:'La', 58:'Ce', 59:'Pr', 60:'Nd', 61:'Pm', 62:'Sm', 63:'Eu', 64:'Gd', 65:'Tb', 66:'Dy', 67:'Ho', 
-   68:'Er', 69:'Tm', 70:'Yb', 71:'Lu', 72:'Hf', 73:'Ta', 74:' W', 75:'Re', 76:'Os', 77:'Ir', 78:'Pt', 
-   79:'Au', 80:'Hg', 81:'Tl', 82:'Pb', 83:'Bi', 84:'Po', 85:'At', 86:'Rn', 87:'Fr', 88:'Ra', 89:'Ac', 
-   90:'Th', 91:'Pa', 92:' U', 93:'Np', 94:'Pu', 95:'Am', 96:'Cm', 97:'Bk', 98:'Cf', 99:'Es', 100:'Fm', 
+    1:' H', 2:'He', 3:'Li', 4:'Be', 5:' B', 6:' C', 7:' N', 8:' O', 9:' F', 10:'Ne', 11:'Na', 12:'Mg',
+   13:'Al', 14:'Si', 15:' P', 16:' S', 17:'Cl', 18:'Ar', 19:' K', 20:'Ca', 21:'Sc', 22:'Ti', 23:' V',
+   24:'Cr', 25:'Mn', 26:'Fe', 27:'Co', 28:'Ni', 29:'Cu', 30:'Zn', 31:'Ga', 32:'Ge', 33:'As', 34:'Se',
+   35:'Br', 36:'Kr', 37:'Rb', 38:'Sr', 39:' Y', 40:'Zr', 41:'Nb', 42:'Mo', 43:'Tc', 44:'Ru', 45:'Rh',
+   46:'Pd', 47:'Ag', 48:'Cd', 49:'In', 50:'Sn', 51:'Sb', 52:'Te', 53:' I', 54:'Xe', 55:'Cs', 56:'Ba',
+   57:'La', 58:'Ce', 59:'Pr', 60:'Nd', 61:'Pm', 62:'Sm', 63:'Eu', 64:'Gd', 65:'Tb', 66:'Dy', 67:'Ho',
+   68:'Er', 69:'Tm', 70:'Yb', 71:'Lu', 72:'Hf', 73:'Ta', 74:' W', 75:'Re', 76:'Os', 77:'Ir', 78:'Pt',
+   79:'Au', 80:'Hg', 81:'Tl', 82:'Pb', 83:'Bi', 84:'Po', 85:'At', 86:'Rn', 87:'Fr', 88:'Ra', 89:'Ac',
+   90:'Th', 91:'Pa', 92:' U', 93:'Np', 94:'Pu', 95:'Am', 96:'Cm', 97:'Bk', 98:'Cf', 99:'Es', 100:'Fm',
   101:'Md', 102:'No', 103:'Lw', 104:'XX'
      }
 
 # Dictionary containing the atomic mass of each species used to put mol in the CM for dipole moment calculation
 atomicmass= {
   1:1.008, 2:4.003, 3:6.939, 4:9.012, 5:10.811, 6:12.011, 7:14.007, 8:15.999, 9:18.998, 10:20.183, 11:22.989, 12:24.312,
-  13:26.982, 14:28.086, 15:30.974, 16:32.064, 17:35.453, 18:39.948, 19:39.102, 20:40.080, 21:44.956, 22:47.900, 23:50.942, 
+  13:26.982, 14:28.086, 15:30.974, 16:32.064, 17:35.453, 18:39.948, 19:39.102, 20:40.080, 21:44.956, 22:47.900, 23:50.942,
   24:51.996, 25:54.938, 26:55.847, 27:58.933, 28:58.710, 29:63.540, 30:65.370, 31:69.720, 32:72.590, 33:74.922, 34:78.960,
   35:79.909, 36:83.800, 37:85.470, 38:87.620, 39:88.905, 40:91.220, 41:92.906, 42:95.940, 43:98.000, 44:101.070, 45:102.905,
-  46:106.400, 47:107.870, 48:112.400, 49:114.820, 50:118.690, 51:121.750, 52:127.600, 53:126.904, 54:131.300, 55:132.905, 
-  56:137.340, 57:138.910, 58:140.120, 59:140.907, 60:144.240, 61:147.000, 62:150.350, 63:151.960, 64:157.250, 65:158.924, 
+  46:106.400, 47:107.870, 48:112.400, 49:114.820, 50:118.690, 51:121.750, 52:127.600, 53:126.904, 54:131.300, 55:132.905,
+  56:137.340, 57:138.910, 58:140.120, 59:140.907, 60:144.240, 61:147.000, 62:150.350, 63:151.960, 64:157.250, 65:158.924,
   66:162.500, 67:164.930, 68:167.260, 69:168.934, 70:173.040, 71:174.970, 72:178.490, 73:180.948, 74:183.850, 75:186.200,
-  76:190.200, 77:192.200, 78:195.090, 79:196.967, 80:200.590, 81:204.370, 82:207.190, 83:208.980, 84:210.000, 85:210.000, 
+  76:190.200, 77:192.200, 78:195.090, 79:196.967, 80:200.590, 81:204.370, 82:207.190, 83:208.980, 84:210.000, 85:210.000,
   86:222.000, 87:223.000, 88:226.000, 89:227.000, 90:232.038, 91:231.000, 92:238.030, 93:237.000, 94:242.000, 95:243.000,
   96:247.000, 97:247.000, 98:249.000, 99:254.000, 100:253.000, 101:256.000, 102:254.000, 103:257.000, 104:0.000
 }
@@ -394,7 +394,7 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, points, base, prin
       print("Your gausstop file should not have more than 4 lines in the title section, as one line is added to hold the dihedral angle. Aborting.")
       sys.exit(0)
     topfile = ''.join(toplines)
-      
+
   # put gaussbot file into a string
   if gaussbot:
     with open(gaussbot, 'r') as f:
@@ -434,7 +434,7 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, points, base, prin
 
   # angle of the first dihedral, to use as reference
   cphi = get_phi(atomsCoord[ab1], abcoord1, abcoord2, atomsCoord[ab4])
-  
+
   # open xyz output for the trajectory if needed
   if (printxyz):
     fxyz = open(base+'_rotations.xyz','w')
@@ -463,7 +463,7 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, points, base, prin
     for idx, died in potentialDict.items():
       phi = get_phi(atomsCoord[died[0]],atomsCoord[died[1]],atomsCoord[died[2]],atomsCoord[died[3]])
       if useamber:
-        en_tors += energy_tors_amber(died[4:],phi)        
+        en_tors += energy_tors_amber(died[4:],phi)
       else:
         en_tors += energy_tors(died[4:],phi)
 
@@ -477,9 +477,9 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, points, base, prin
       # determine the interaction constants
       epsi = nbParams[atom1][1] * nbParams[atom2][1]
       if mult:
-        sigm = nbParams[atom1][2] * nbParams[atom2][2] 
+        sigm = nbParams[atom1][2] * nbParams[atom2][2]
       else:
-        sigm = nbParams[atom1][2] + nbParams[atom2][2] 
+        sigm = nbParams[atom1][2] + nbParams[atom2][2]
 
       # sum the energy
       en_nb += energy_nonbonded(sigm, epsi, nbParams[atom1][0], nbParams[atom2][0], fclb[atom1-1][atom2-1], flj[atom1-1][atom2-1], r)
@@ -516,6 +516,12 @@ def get_potential_curve(txtfile, dfrfile, ab1, ab2, ab3, ab4, points, base, prin
 
   if (gausstop):
     fgjf.close()
+    with open(base+'_scan.gjf') as f:
+        arq = f.readlines()
+        new_arq = arq[0:len(arq)-1]
+    with open(base+'_scan.gjf','w') as f:
+        for line in new_arq:
+            f.write(line)    
 
   return angles, died_energies, nb_energies, dipoles
 
@@ -656,11 +662,11 @@ if __name__ == '__main__':
   else:
     plt.xlim([-180,180])
     plt.xticks([-180,-120,-60,0,60,120,180])
-  plt.ylabel(r"Nonbonded energy (kcal/mol)")    
+  plt.ylabel(r"Nonbonded energy (kcal/mol)")
   plt.savefig(fnb, bbox_inches='tight')
   plt.gcf().clear()
 
-  # plot total energy 
+  # plot total energy
   plt.plot(osphi,toten)
   plt.xlabel(r"$\phi$ ($^\circ$)")
   if (args.shiftangles):
@@ -669,7 +675,7 @@ if __name__ == '__main__':
   else:
     plt.xlim([-180,180])
     plt.xticks([-180,-120,-60,0,60,120,180])
-  plt.ylabel(r"Potential energy (kcal/mol)")    
+  plt.ylabel(r"Potential energy (kcal/mol)")
   plt.savefig(ftotal, bbox_inches='tight')
   plt.gcf().clear()
 
@@ -682,5 +688,5 @@ if __name__ == '__main__':
   else:
     plt.xlim([-180,180])
     plt.xticks([-180,-120,-60,0,60,120,180])
-  plt.ylabel(r"$\mu$ (Debye)")    
+  plt.ylabel(r"$\mu$ (Debye)")
   plt.savefig(fdip, bbox_inches='tight')
