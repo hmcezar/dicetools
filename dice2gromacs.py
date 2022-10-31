@@ -109,6 +109,9 @@ def read_improper(fd):
 
 
 def read_dfr_dof(dfrfile):
+  # the $improper is not required, so make an empty dicionary
+  # in case it's not found, so the rest of the script can runs
+  dfrImpDih = {}
   with open(dfrfile, 'r') as f:
     while True:
       line = f.readline()
