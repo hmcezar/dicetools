@@ -17,7 +17,6 @@ def find_natoms(topfile):
 	"""
 
 	with open(topfile, "r") as f:
-		var_bool = False
 		words = []
 
 		line = f.readline()
@@ -31,7 +30,32 @@ def find_natoms(topfile):
 				words = line.split()
 				line = f.readline()
 
-		return int(words[0])
+	return int(words[0])
+
+def check_top_order(topfile):
+	"""
+	Return a vector with atoms types ordered by line.
+	"""
+
+	with open(topfile, "r") as f:
+		atoms_type = []
+
+		line = f.readline()
+		while "[ atoms ]" not in line:
+			line = f.readline()
+
+		line = f.readline()
+
+		while "[ bonds ]" not in line:
+			if line.strip().startswith(";") or len(line.strip()) == 0:
+				line = f.readline()
+			else:
+				words = line.split()
+				letters = list(words[4])
+				atoms_type.append(letters[0])
+				line = f.readline()
+
+	return atoms_type
 
 def read_gaussian_charges(topfile, gaussianlogfile):
 	"""
@@ -41,6 +65,7 @@ def read_gaussian_charges(topfile, gaussianlogfile):
 	natoms = find_natoms(topfile)
 
 	qm_charges = []
+	gaussian_atoms = []
 
 	with open(gaussianlogfile, "r") as f:
 		var_bool = False 
@@ -55,10 +80,11 @@ def read_gaussian_charges(topfile, gaussianlogfile):
 				i = i + 1
 				if len(words) > 2:
 					qm_charges.append(round(float(words[2]), 4))
+					gaussian_atoms.append(words[1])
 
 		var_bool = False
 
-		return qm_charges
+	return qm_charges, gaussian_atoms
 
 def read_mulliken_charges(topfile, gaussianlogfile):
 	"""
@@ -68,6 +94,7 @@ def read_mulliken_charges(topfile, gaussianlogfile):
 	natoms = find_natoms(topfile)
 
 	qm_charges = []
+	gaussian_atoms = []
 
 	with open(gaussianlogfile, "r") as f:
 		var_bool = False
@@ -81,11 +108,12 @@ def read_mulliken_charges(topfile, gaussianlogfile):
 				words = line.split()
 				i = i + 1
 				if len(words) > 2:
-					qm_charges.append(round(float(words[2], 4)))
+					qm_charges.append(round(float(words[2]), 4))
+					gaussian_atoms.append(words[1])
 
 		var_bool = False
 
-	return qm_charges
+	return qm_charges, gaussian_atoms
 
 def correct_total_charge(qm_charges):
 	"""
@@ -132,12 +160,21 @@ def parse_charges(topfile, gaussianlogfile, method):
 
 		ESP_methods = ['hly', 'chelpg', 'mk', 'chelp', 'mkuff', 'hlygat']
 		if method.lower() in ESP_methods:
-			qm_charges = read_gaussian_charges(topfile, gaussianlogfile)
+			qm_charges, gaussian_atoms = read_gaussian_charges(topfile, gaussianlogfile)
 		elif method.lower() == 'mulliken':
-			qm_charges = read_mulliken_charges(topfile, gaussianlogfile)
+			qm_charges, gaussian_atoms = read_mulliken_charges(topfile, gaussianlogfile)
 		else:
 			print('Charge population method not supported (try "python3 parse_gaussian_charges.py -h").')
 			sys.exit(0)
+
+	# Check if topology and gaussian output atoms are in the same order
+
+		topology_atoms = check_top_order(topfile)
+
+		for i in range(len(topology_atoms)):
+			if topology_atoms[i] != gaussian_atoms[i]:
+				print('Atoms in the topology file are ordered differently from the gaussian output file. \nAtom {}: {} (topology file) and {} (gaussian file). \nPlease order both files in the same way.'.format(i+1, topology_atoms[i], gaussian_atoms[i]))
+				sys.exit(0)
 
 	# Correct the total charge
 
