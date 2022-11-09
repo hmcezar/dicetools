@@ -16,6 +16,7 @@ from distutils.spawn import find_executable
 def parse_en_log_gaussian(fname):
   died = []
   ener = []
+  conv = True
   with open(fname, 'r') as f:
     while True:
       line = f.readline()
@@ -29,14 +30,20 @@ def parse_en_log_gaussian(fname):
       mp2 = False
 
     for line in f:
+      if "Convergence criterion not met" in line:
+        conv = False
+        
       if " dihedral =" in line:
         angle = line.split("=")[1].strip()
 
       # get energy and convert to kcal/mol
       if not mp2 and "SCF Done: " in line:
-        en = float(line.split()[4])*627.509
-        died.append(float(angle.split()[0]))
-        ener.append(en)
+        if conv:
+          en = float(line.split()[4])*627.509
+          died.append(float(angle.split()[0]))
+          ener.append(en)
+        else:
+          conv = True
       elif mp2 and "EUMP2" in line:
         en = float(line.split()[5].replace("D","E"))*627.509
         died.append(float(angle.split()[0]))
