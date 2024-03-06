@@ -11,7 +11,7 @@ import sys
 import argparse
 import tempfile
 import shutil
-try: 
+try:
   import pybel
   import openbabel
   ob3 = False
@@ -64,7 +64,7 @@ def lookup_ffbond(t1, t2, path):
 		while True:
 			line = f.readline()
 			if not line:
-				break			
+				break
 			if line.strip().startswith(";") or line.strip().startswith("#") or len(line.strip()) == 0:
 				continue
 			if line.strip() == "[ bondtypes ]":
@@ -88,7 +88,7 @@ def lookup_ffangle(t1, t2, t3, path):
 		while True:
 			line = f.readline()
 			if not line:
-				break			
+				break
 			if line.strip().startswith(";") or line.strip().startswith("#") or len(line.strip()) == 0:
 				continue
 			if line.strip() == "[ angletypes ]":
@@ -125,7 +125,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 		while True:
 			line = f.readline()
 			if not line:
-				break			
+				break
 			if line.strip().startswith(";") or line.strip().startswith("#") or len(line.strip()) == 0:
 				continue
 			if line.strip() == "[ dihedraltypes ]":
@@ -159,7 +159,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 					if not line or line.strip().startswith("[ "):
 						break
 					if line.strip().startswith(";") or line.strip().startswith("#") or len(line.strip()) == 0:
-						continue	
+						continue
 					# check if it's not an improper dihedral
 					if int(line.split()[4]) != dtype:
 						continue
@@ -168,7 +168,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 						fnd_lines.append(line)
 					elif (line.split()[0] == t1 and line.split()[1] == t2 and line.split()[2] == t3 and line.split()[3] == "X") or (line.split()[0] == "X" and line.split()[1] == t3 and line.split()[2] == t2 and line.split()[3] == t1):
 						fnd_lines.append(line)
-		
+
 			# if still not found, try with two missing atoms
 			if (len(fnd_lines) == 0):
 				f.seek(fpos[i])
@@ -219,7 +219,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 				params[n-1] = 2.0*float(line.split()[6])
 				params[n+3] = float(line.split()[5])
 
-			retline = "%s\t%s\t%s\t%s\t%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f" % (t1,t2,t3,t4,dtype,params[0],params[1],params[2],params[3],params[4],params[5],params[6],params[7])				
+			retline = "%s\t%s\t%s\t%s\t%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f" % (t1,t2,t3,t4,dtype,params[0],params[1],params[2],params[3],params[4],params[5],params[6],params[7])
 
 			return retline
 
@@ -229,7 +229,7 @@ def lookup_ffdihedral(t1, t2, t3, t4, dtype, ffname, path):
 def strip_comment(string, token=';'):
 	return string.split(token)[0].strip()
 
-def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, path):
+def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, path, rigidflag):
 	if "amber" in ffname:
 		potname = "AMBER"
 	else:
@@ -255,7 +255,7 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, 
 			line = f.readline()
 
 			if not line:
-				break		
+				break
 
 			if line.strip().startswith(";") or line.strip().startswith("#") or len(line.strip()) == 0:
 				continue
@@ -346,6 +346,17 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, 
 			# the last one will not be printed but is needed to retrieve the opls-aa force constants
 			atoms[atomlbl].append(ffline.split()[1])
 		# print(atoms[atomlbl])
+
+	with open(base+".txt","w") as f:
+		f.write("*\n1\n")
+		f.write(str(len(atoms))+" \t %s (generated with gromacs2dice)\n" % (os.path.basename(base)))
+		for atom, data in atoms.items():
+			f.write("%2d %2d \t %7.4f \t %7.4f \t %7.4f \t %7.4f \t %7.4f \t %7.4f\n" % (int(data[1]), int(data[2]), float(data[3]), float(data[4]), float(data[5]), float(data[6]), float(data[7]), float(data[8])))
+		f.write("$end\n")
+
+	if rigidflag:
+		print("The file %s was successfully generated." % (base+".txt"))
+		return
 
 	# now create the fragment connection list from this file and store it in fraginfo
 
@@ -507,7 +518,7 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, 
 	improper = []
 	for line in tdata["[ improper ]"]:
 		if len(strip_comment(line).split()) >= 7:
-			improper.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+" "+line.split()[3]+"   \t"+str(round(j2cal(float(line.split()[6])),3))+"\t"+line.split()[5]+"\n")			
+			improper.append(line.split()[0]+" "+line.split()[1]+" "+line.split()[2]+" "+line.split()[3]+"   \t"+str(round(j2cal(float(line.split()[6])),3))+"\t"+line.split()[5]+"\n")
 		else:
 			if "opls" in ffname:
 				ffline = lookup_ffimproper(line.split()[5], path)
@@ -518,12 +529,7 @@ def top2dfr(topfile, geomfile, flexfrag, eqgeom, savefrags, topcharges, ffname, 
 
 	# print everything to the output file
 	base, ext = os.path.splitext(geomfile)
-	with open(base+".txt","w") as f:
-		f.write("*\n1\n")
-		f.write(str(len(atoms))+" \t %s (generated with gromacs2dice)\n" % (os.path.basename(base)))
-		for atom, data in atoms.items():
-			f.write("%2d %2d \t %7.4f \t %7.4f \t %7.4f \t %7.4f \t %7.4f \t %7.4f\n" % (int(data[1]), int(data[2]), float(data[3]), float(data[4]), float(data[5]), float(data[6]), float(data[7]), float(data[8])))
-		f.write("$end\n")
+
 	with open(base+".dfr","w") as f:
 		for line in fraginfo:
 			f.write(line)
@@ -564,6 +570,7 @@ if __name__ == '__main__':
 	parser.add_argument("--flexible-fragments", help="if you will perform a simulation with flexible fragments use this option to have a complete .dfr with all the parameters.", action="store_true")
 	parser.add_argument("--eq-from-geom", "-g", help="get the equilibrium values for bonds and angles from geometry instead of force field values.", action="store_true")
 	parser.add_argument("--charges-from-topology", "-c", help="Use the charges from the topology file instead of the force field file.", action="store_true")
+	parser.add_argument("--rigid",help="Use to generate only the txt file", action="store_true")
 
 	args = parser.parse_args()
 
@@ -588,4 +595,4 @@ if __name__ == '__main__':
 		print('!!!! If you wish to use the charges from your topology, use the "--charges-from-topology" option.  !!!!\n')
 
 	# convert the file
-	top2dfr(args.topfile, args.geomfile, args.flexible_fragments, args.eq_from_geom, args.save_fragments, args.charges_from_topology, ffname, FFPATH)
+	top2dfr(args.topfile, args.geomfile, args.flexible_fragments, args.eq_from_geom, args.save_fragments, args.charges_from_topology, ffname, FFPATH,args.rigid)
